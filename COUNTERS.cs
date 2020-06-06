@@ -11,7 +11,6 @@ namespace COUNTERS
         private readonly NotifyIcon trayIcon;
 
         PerformanceCounter pc;
-        readonly PerformanceCounterCategory[] categories;
         readonly int[] val = new int[5];
 
         //Window initialization
@@ -40,7 +39,7 @@ namespace COUNTERS
             trayIcon.DoubleClick += trayIcon_MouseDoubleClick;
 
             //Fill in object list
-            foreach (PerformanceCounterCategory cat in categories = PerformanceCounterCategory.GetCategories())
+            foreach (PerformanceCounterCategory cat in PerformanceCounterCategory.GetCategories())
                 comboCategory.Items.Add(cat.CategoryName);
 
             //comboCategory.Sorted = true;
@@ -130,14 +129,13 @@ namespace COUNTERS
             progressCnt.Value = 0;
             comboInstance.Items.Clear();
             comboInstance.SelectedIndex = -1;
-            
-            foreach (var inst in categories[comboCategory.SelectedIndex].GetInstanceNames())
-                comboInstance.Items.Add(inst);
+
+            foreach (var instance in PerformanceCounterCategory.GetCategories()[comboCategory.SelectedIndex].GetInstanceNames())
+                comboInstance.Items.Add(instance);
             comboInstance.SelectedIndex = comboInstance.FindString("_Total");
 
-            PerformanceCounter[] counters = categories[comboCategory.SelectedIndex].GetCounters(comboInstance.SelectedItem.ToString());
-            foreach (var c in counters)
-                comboCounter.Items.Add(c.CounterName);
+            foreach (var counter in PerformanceCounterCategory.GetCategories()[comboCategory.SelectedIndex].GetCounters(comboInstance.SelectedItem.ToString()))
+                comboCounter.Items.Add(counter.CounterName);
 
             if ((comboCounter.SelectedIndex = comboCounter.FindString("% Disk Time")) == -1)
                 if ((comboCounter.SelectedIndex = comboCounter.FindString("% Disktid")) == -1)
