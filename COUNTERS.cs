@@ -54,6 +54,22 @@ namespace COUNTERS
             comboInstance.SelectedIndex = comboInstance.FindString("_Total");
         }
 
+        //Simple window snapping
+        protected override void OnResizeEnd(EventArgs e)
+        {
+            base.OnResizeEnd(e);
+            Screen s = Screen.FromPoint(Location);
+            if (Snap(Left, s.WorkingArea.Left)) Left = s.WorkingArea.Left;
+            if (Snap(Top, s.WorkingArea.Top)) Top = s.WorkingArea.Top;
+            if (Snap(s.WorkingArea.Right, Right)) Left = s.WorkingArea.Right - Width;
+            if (Snap(s.WorkingArea.Bottom, Bottom)) Top = s.WorkingArea.Bottom - Height;
+
+            bool Snap(int pos, int edge)
+            {
+                return pos - edge > 0 && pos - edge <= 25;
+            }
+        }
+
         //Handle menu exit
         private void menuExit(object s, EventArgs e)
         {
@@ -129,6 +145,8 @@ namespace COUNTERS
             progressCnt.Value = 0;
             comboInstance.Items.Clear();
             comboInstance.SelectedIndex = -1;
+            comboCounter.Items.Clear();
+            comboCounter.SelectedIndex = -1;
 
             foreach (var instance in PerformanceCounterCategory.GetCategories()[comboCategory.SelectedIndex].GetInstanceNames())
                 comboInstance.Items.Add(instance);
