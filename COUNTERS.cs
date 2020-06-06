@@ -11,8 +11,8 @@ namespace COUNTERS
         private readonly NotifyIcon trayIcon;
 
         PerformanceCounter pc;
-        PerformanceCounterCategory[] categories;
-        int[] val = new int[5];
+        readonly PerformanceCounterCategory[] categories;
+        readonly int[] val = new int[5];
 
         //Window initialization
         public COUNTERS()

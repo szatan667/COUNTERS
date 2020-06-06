@@ -33,7 +33,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Resources\green75.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <NoWin32Manifest>true</NoWin32Manifest>
@@ -82,11 +83,22 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <None Include="Resources\green50.ico" />
-    <None Include="Resources\green75.ico" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <None Include="Resources\green0.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\green25.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\green50.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\green75.ico" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\green100.ico" />

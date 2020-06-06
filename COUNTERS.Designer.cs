@@ -163,6 +163,7 @@
             this.Controls.Add(this.groupInstance);
             this.Controls.Add(this.groupCounter);
             this.Controls.Add(this.groupCategory);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "COUNTERS";
             this.Text = "COUNTERS";
             this.groupCategory.ResumeLayout(false);
