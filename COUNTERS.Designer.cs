@@ -69,7 +69,7 @@
             // timerCnt
             // 
             this.timerCnt.Enabled = true;
-            this.timerCnt.Interval = 25;
+            this.timerCnt.Interval = 50;
             this.timerCnt.Tick += new System.EventHandler(this.timerCnt_Tick);
             // 
             // groupCounter
@@ -133,8 +133,7 @@
             // 
             // timerIcon
             // 
-            this.timerIcon.Enabled = true;
-            this.timerIcon.Interval = 50;
+            this.timerIcon.Interval = 25;
             this.timerIcon.Tick += new System.EventHandler(this.timerIcon_Tick);
             // 
             // timerMinimize
@@ -165,6 +164,7 @@
             this.Controls.Add(this.groupCategory);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "COUNTERS";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "COUNTERS";
             this.groupCategory.ResumeLayout(false);
             this.groupCounter.ResumeLayout(false);

@@ -37,6 +37,7 @@ namespace COUNTERS
             trayIcon.ContextMenu.MenuItems[0].DrawItem += MenuItemDraw;
             trayIcon.ContextMenu.MenuItems[0].MeasureItem += MenuItemMeasure;
             trayIcon.DoubleClick += trayIcon_MouseDoubleClick;
+            Application.ApplicationExit += Application_ApplicationExit;
 
             //Fill in object list
             foreach (PerformanceCounterCategory cat in PerformanceCounterCategory.GetCategories())
@@ -54,20 +55,10 @@ namespace COUNTERS
             comboInstance.SelectedIndex = comboInstance.FindString("_Total");
         }
 
-        //Simple window snapping
-        protected override void OnResizeEnd(EventArgs e)
+        //App exit event
+        private void Application_ApplicationExit(object sender, EventArgs e)
         {
-            base.OnResizeEnd(e);
-            Screen s = Screen.FromPoint(Location);
-            if (Snap(Left, s.WorkingArea.Left)) Left = s.WorkingArea.Left;
-            if (Snap(Top, s.WorkingArea.Top)) Top = s.WorkingArea.Top;
-            if (Snap(s.WorkingArea.Right, Right)) Left = s.WorkingArea.Right - Width;
-            if (Snap(s.WorkingArea.Bottom, Bottom)) Top = s.WorkingArea.Bottom - Height;
-
-            bool Snap(int pos, int edge)
-            {
-                return pos - edge > 0 && pos - edge <= 25;
-            }
+            trayIcon.Dispose();
         }
 
         //Handle menu exit
@@ -101,30 +92,35 @@ namespace COUNTERS
                         labelValue.Text = avg.ToString();
                     }
 
-                    if (avg <= 3)
+                    if (avg <= 0)
                     {
                         Icon = Properties.Resources.green0;
                         trayIcon.Icon = Properties.Resources.green0;
+                        timerIcon.Enabled = true;
                     }
                     else if (avg <= 25)
                     {
                         Icon = Properties.Resources.green25;
                         trayIcon.Icon = Properties.Resources.green25;
+                        timerIcon.Enabled = true;
                     }
                     else if (avg <= 50)
                     {
                         Icon = Properties.Resources.green50;
                         trayIcon.Icon = Properties.Resources.green50;
+                        timerIcon.Enabled = true;
                     }
                     else if (avg <= 75)
                     {
                         Icon = Properties.Resources.green75;
                         trayIcon.Icon = Properties.Resources.green75;
+                        timerIcon.Enabled = true;
                     }
                     else if (avg <= 100)
                     {
                         Icon = Properties.Resources.green100;
                         trayIcon.Icon = Properties.Resources.green100;
+                        timerIcon.Enabled = true;
                     }
                 }
                 catch (Exception) { }
@@ -136,6 +132,7 @@ namespace COUNTERS
         {
             Icon = Properties.Resources.green0;
             trayIcon.Icon = Properties.Resources.green0;
+            timerIcon.Enabled = false;
         }
 
         //Create counters list when category has been picked
@@ -150,14 +147,24 @@ namespace COUNTERS
 
             foreach (var instance in PerformanceCounterCategory.GetCategories()[comboCategory.SelectedIndex].GetInstanceNames())
                 comboInstance.Items.Add(instance);
-            comboInstance.SelectedIndex = comboInstance.FindString("_Total");
 
-            foreach (var counter in PerformanceCounterCategory.GetCategories()[comboCategory.SelectedIndex].GetCounters(comboInstance.SelectedItem.ToString()))
-                comboCounter.Items.Add(counter.CounterName);
+            if (comboInstance.Items.Count > 0)
+            {
+                if ((comboInstance.SelectedIndex = comboInstance.FindString("_Total")) == -1)
+                    comboInstance.SelectedIndex = 0;
 
-            if ((comboCounter.SelectedIndex = comboCounter.FindString("% Disk Time")) == -1)
-                if ((comboCounter.SelectedIndex = comboCounter.FindString("% Disktid")) == -1)
-                    comboCounter.SelectedIndex = comboCounter.FindString("% Czas dysku");
+                foreach (var counter in PerformanceCounterCategory.GetCategories()[comboCategory.SelectedIndex].GetCounters(comboInstance.SelectedItem.ToString()))
+                    comboCounter.Items.Add(counter.CounterName);
+
+                if ((comboCounter.SelectedIndex = comboCounter.FindString("% Disk Time")) == -1)
+                    if ((comboCounter.SelectedIndex = comboCounter.FindString("% Disktid")) == -1)
+                        if ((comboCounter.SelectedIndex = comboCounter.FindString("% Czas dysku")) == -1)
+                            comboCounter.SelectedIndex = 0;
+            }
+            else
+            {
+                comboCategory.SelectedIndex = 0;
+            }
         }
 
         private void comboInstance_SelectedIndexChanged(object s, EventArgs e)
