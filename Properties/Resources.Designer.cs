@@ -19,7 +19,7 @@ namespace COUNTERS.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -63,9 +63,9 @@ namespace COUNTERS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon green0 {
+        internal static System.Drawing.Icon new0 {
             get {
-                object obj = ResourceManager.GetObject("green0", resourceCulture);
+                object obj = ResourceManager.GetObject("new0", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
@@ -73,9 +73,9 @@ namespace COUNTERS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon green100 {
+        internal static System.Drawing.Icon new100 {
             get {
-                object obj = ResourceManager.GetObject("green100", resourceCulture);
+                object obj = ResourceManager.GetObject("new100", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
@@ -83,9 +83,9 @@ namespace COUNTERS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon green25 {
+        internal static System.Drawing.Icon new25 {
             get {
-                object obj = ResourceManager.GetObject("green25", resourceCulture);
+                object obj = ResourceManager.GetObject("new25", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
@@ -93,9 +93,9 @@ namespace COUNTERS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon green50 {
+        internal static System.Drawing.Icon new50 {
             get {
-                object obj = ResourceManager.GetObject("green50", resourceCulture);
+                object obj = ResourceManager.GetObject("new50", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
@@ -103,9 +103,9 @@ namespace COUNTERS.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon green75 {
+        internal static System.Drawing.Icon new75 {
             get {
-                object obj = ResourceManager.GetObject("green75", resourceCulture);
+                object obj = ResourceManager.GetObject("new75", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }

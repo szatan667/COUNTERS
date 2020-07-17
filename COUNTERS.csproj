@@ -91,21 +91,20 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <None Include="Resources\green0.ico" />
+    <None Include="Resources\new0.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\green25.ico" />
+    <None Include="Resources\new25.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\green50.ico" />
+    <None Include="Resources\new50.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\green75.ico" />
+    <None Include="Resources\new75.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\green100.ico" />
+    <None Include="Resources\new100.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

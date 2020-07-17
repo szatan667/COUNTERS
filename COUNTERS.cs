@@ -22,7 +22,7 @@ namespace COUNTERS
             {
                 Text = "Blink",
                 Visible = true,
-                Icon = Properties.Resources.green0,
+                Icon = Properties.Resources.new0,
                 ContextMenu = new ContextMenu(new MenuItem[]
                 {
                    new MenuItem("Exit", menuExit)
@@ -44,8 +44,8 @@ namespace COUNTERS
                 comboCategory.Items.Add(cat.CategoryName);
 
             //comboCategory.Sorted = true;
-            this.Icon = Properties.Resources.green0;
-            trayIcon.Icon = Properties.Resources.green0;
+            this.Icon = Properties.Resources.new0;
+            trayIcon.Icon = Properties.Resources.new0;
 
             //Try to pick total disk time by default
             //(will work for English only probably) 
@@ -92,34 +92,34 @@ namespace COUNTERS
                         labelValue.Text = avg.ToString();
                     }
 
-                    if (avg <= 0)
+                    if (avg <= 1)
                     {
-                        Icon = Properties.Resources.green0;
-                        trayIcon.Icon = Properties.Resources.green0;
+                        Icon = Properties.Resources.new0;
+                        trayIcon.Icon = Properties.Resources.new0;
                         timerIcon.Enabled = true;
                     }
-                    else if (avg <= 25)
+                    else if (avg <= 5)
                     {
-                        Icon = Properties.Resources.green25;
-                        trayIcon.Icon = Properties.Resources.green25;
+                        Icon = Properties.Resources.new25;
+                        trayIcon.Icon = Properties.Resources.new25;
                         timerIcon.Enabled = true;
                     }
-                    else if (avg <= 50)
+                    else if (avg <= 15)
                     {
-                        Icon = Properties.Resources.green50;
-                        trayIcon.Icon = Properties.Resources.green50;
+                        Icon = Properties.Resources.new50;
+                        trayIcon.Icon = Properties.Resources.new50;
                         timerIcon.Enabled = true;
                     }
-                    else if (avg <= 75)
+                    else if (avg <= 35)
                     {
-                        Icon = Properties.Resources.green75;
-                        trayIcon.Icon = Properties.Resources.green75;
+                        Icon = Properties.Resources.new75;
+                        trayIcon.Icon = Properties.Resources.new75;
                         timerIcon.Enabled = true;
                     }
                     else if (avg <= 100)
                     {
-                        Icon = Properties.Resources.green100;
-                        trayIcon.Icon = Properties.Resources.green100;
+                        Icon = Properties.Resources.new100;
+                        trayIcon.Icon = Properties.Resources.new100;
                         timerIcon.Enabled = true;
                     }
                 }
@@ -130,8 +130,8 @@ namespace COUNTERS
         //Disable icon perodically to make it blink
         private void timerIcon_Tick(object s, EventArgs e)
         {
-            Icon = Properties.Resources.green0;
-            trayIcon.Icon = Properties.Resources.green0;
+            Icon = Properties.Resources.new0;
+            trayIcon.Icon = Properties.Resources.new0;
             timerIcon.Enabled = false;
         }
 
