@@ -64,13 +64,13 @@
             this.comboCategory.Name = "comboCategory";
             this.comboCategory.Size = new System.Drawing.Size(296, 21);
             this.comboCategory.TabIndex = 0;
-            this.comboCategory.SelectedIndexChanged += new System.EventHandler(this.comboCategory_SelectedIndexChanged);
+            this.comboCategory.SelectedIndexChanged += new System.EventHandler(this.ComboCategory_SelectedIndexChanged);
             // 
             // timerCnt
             // 
             this.timerCnt.Enabled = true;
             this.timerCnt.Interval = 50;
-            this.timerCnt.Tick += new System.EventHandler(this.timerCnt_Tick);
+            this.timerCnt.Tick += new System.EventHandler(this.TimerCnt_Tick);
             // 
             // groupCounter
             // 
@@ -90,7 +90,7 @@
             this.comboCounter.Name = "comboCounter";
             this.comboCounter.Size = new System.Drawing.Size(296, 21);
             this.comboCounter.TabIndex = 0;
-            this.comboCounter.SelectedIndexChanged += new System.EventHandler(this.comboCounter_SelectedIndexChanged);
+            this.comboCounter.SelectedIndexChanged += new System.EventHandler(this.ComboCounter_SelectedIndexChanged);
             // 
             // groupInstance
             // 
@@ -110,7 +110,7 @@
             this.comboInstance.Name = "comboInstance";
             this.comboInstance.Size = new System.Drawing.Size(296, 21);
             this.comboInstance.TabIndex = 0;
-            this.comboInstance.SelectedIndexChanged += new System.EventHandler(this.comboInstance_SelectedIndexChanged);
+            this.comboInstance.SelectedIndexChanged += new System.EventHandler(this.ComboInstance_SelectedIndexChanged);
             // 
             // progressCnt
             // 
@@ -134,13 +134,13 @@
             // timerIcon
             // 
             this.timerIcon.Interval = 25;
-            this.timerIcon.Tick += new System.EventHandler(this.timerIcon_Tick);
+            this.timerIcon.Tick += new System.EventHandler(this.TimerIcon_Tick);
             // 
             // timerMinimize
             // 
             this.timerMinimize.Enabled = true;
             this.timerMinimize.Interval = 1;
-            this.timerMinimize.Tick += new System.EventHandler(this.timerMinimize_Tick);
+            this.timerMinimize.Tick += new System.EventHandler(this.TimerMinimize_Tick);
             // 
             // textCntDesc
             // 

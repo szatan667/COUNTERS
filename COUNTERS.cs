@@ -25,7 +25,7 @@ namespace COUNTERS
                 Icon = Properties.Resources.new0,
                 ContextMenu = new ContextMenu(new MenuItem[]
                 {
-                   new MenuItem("Exit", menuExit)
+                   new MenuItem("Exit", MenuExit)
                    {
                        OwnerDraw = true,
                        Tag = new Font("Anonymous Pro", 16, FontStyle.Bold)
@@ -36,7 +36,7 @@ namespace COUNTERS
             //Register menu events
             trayIcon.ContextMenu.MenuItems[0].DrawItem += MenuItemDraw;
             trayIcon.ContextMenu.MenuItems[0].MeasureItem += MenuItemMeasure;
-            trayIcon.DoubleClick += trayIcon_MouseDoubleClick;
+            trayIcon.DoubleClick += TrayIcon_MouseDoubleClick;
             Application.ApplicationExit += Application_ApplicationExit;
 
             //Fill in object list
@@ -62,73 +62,70 @@ namespace COUNTERS
         }
 
         //Handle menu exit
-        private void menuExit(object s, EventArgs e)
+        private void MenuExit(object s, EventArgs e)
         {
             Application.Exit();
         }
 
         //Draw current readout on screen - here progress bar
-        private void timerCnt_Tick(object s, EventArgs e)
+        private void TimerCnt_Tick(object s, EventArgs e)
         {
             //Read latest value and get the average reading
-            if (pc != null)
+            try
             {
-                try
+                //Shift values left, make room for new readout
+                for (int i = 0; i < val.Length - 1; i++)
+                    val[i] = val[i + 1];
+                val[val.Length - 1] = (int)pc.NextValue();
+
+                int sum = 0;
+                for (int i = 0; i < val.Length; i++)
+                    sum += val[i];
+
+                int avg = sum / val.Length;
+
+                if (avg >= 0 && avg <= 100)
                 {
-                    //Shift values left, make room for new readout
-                    for (int i = 0; i < val.Length - 1; i++)
-                        val[i] = val[i + 1];
-                    val[val.Length - 1] = (int)pc.NextValue();
-
-                    int sum = 0;
-                    for (int i = 0; i < val.Length; i++)
-                        sum += val[i];
-
-                    int avg = sum / val.Length;
-
-                    if (avg >= 0 && avg <= 100)
-                    {
-                        progressCnt.Value = avg;
-                        labelValue.Text = avg.ToString();
-                    }
-
-                    if (avg <= 1)
-                    {
-                        Icon = Properties.Resources.new0;
-                        trayIcon.Icon = Properties.Resources.new0;
-                        timerIcon.Enabled = true;
-                    }
-                    else if (avg <= 5)
-                    {
-                        Icon = Properties.Resources.new25;
-                        trayIcon.Icon = Properties.Resources.new25;
-                        timerIcon.Enabled = true;
-                    }
-                    else if (avg <= 15)
-                    {
-                        Icon = Properties.Resources.new50;
-                        trayIcon.Icon = Properties.Resources.new50;
-                        timerIcon.Enabled = true;
-                    }
-                    else if (avg <= 35)
-                    {
-                        Icon = Properties.Resources.new75;
-                        trayIcon.Icon = Properties.Resources.new75;
-                        timerIcon.Enabled = true;
-                    }
-                    else if (avg <= 100)
-                    {
-                        Icon = Properties.Resources.new100;
-                        trayIcon.Icon = Properties.Resources.new100;
-                        timerIcon.Enabled = true;
-                    }
+                    progressCnt.Value = avg;
+                    labelValue.Text = avg.ToString();
                 }
-                catch (Exception) { }
+
+                if (avg <= 1)
+                {
+                    Icon = Properties.Resources.new0;
+                    trayIcon.Icon = Properties.Resources.new0;
+                    timerIcon.Enabled = true;
+                }
+                else if (avg <= 5)
+                {
+                    Icon = Properties.Resources.new25;
+                    trayIcon.Icon = Properties.Resources.new25;
+                    timerIcon.Enabled = true;
+                }
+                else if (avg <= 15)
+                {
+                    Icon = Properties.Resources.new50;
+                    trayIcon.Icon = Properties.Resources.new50;
+                    timerIcon.Enabled = true;
+                }
+                else if (avg <= 35)
+                {
+                    Icon = Properties.Resources.new75;
+                    trayIcon.Icon = Properties.Resources.new75;
+                    timerIcon.Enabled = true;
+                }
+                else if (avg <= 100)
+                {
+                    Icon = Properties.Resources.new100;
+                    trayIcon.Icon = Properties.Resources.new100;
+                    timerIcon.Enabled = true;
+                }
             }
+            catch (Exception) { }
         }
 
         //Disable icon perodically to make it blink
-        private void timerIcon_Tick(object s, EventArgs e)
+        private void TimerIcon_Tick(object s, EventArgs e)
         {
             Icon = Properties.Resources.new0;
             trayIcon.Icon = Properties.Resources.new0;
@@ -136,7 +133,7 @@ namespace COUNTERS
         }
 
         //Create counters list when category has been picked
-        private void comboCategory_SelectedIndexChanged(object s, EventArgs e)
+        private void ComboCategory_SelectedIndexChanged(object s, EventArgs e)
         {
             pc = null;
             progressCnt.Value = 0;
@@ -167,20 +164,20 @@ namespace COUNTERS
             }
         }
 
-        private void comboInstance_SelectedIndexChanged(object s, EventArgs e)
+        private void ComboInstance_SelectedIndexChanged(object s, EventArgs e)
         {
             //createCounter();
             //textCntDesc.Text = "lalamido";
         }
 
-        private void comboCounter_SelectedIndexChanged(object s, EventArgs e)
+        private void ComboCounter_SelectedIndexChanged(object s, EventArgs e)
         {
-            createCounter();
+            CreateCounter();
             textCntDesc.Text = pc.CounterHelp;
         }
 
         //Create actual counter
-        private void createCounter()
+        private void CreateCounter()
         {
             try
             {
@@ -192,7 +189,7 @@ namespace COUNTERS
         }
 
         //Go to tray on startup
-        private void timerMinimize_Tick(object s, EventArgs e)
+        private void TimerMinimize_Tick(object s, EventArgs e)
         {
             WindowState = FormWindowState.Minimized;
             Hide();
@@ -200,7 +197,7 @@ namespace COUNTERS
             timerMinimize.Dispose();
         }
 
-        private void trayIcon_MouseDoubleClick(object s, EventArgs e)
+        private void TrayIcon_MouseDoubleClick(object s, EventArgs e)
         {
             if (WindowState != FormWindowState.Minimized)
             {
