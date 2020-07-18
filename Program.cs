@@ -113,9 +113,9 @@ public partial class COUNTERSX : ApplicationContext
 
         //CATEGORIES
         //Fill in list of performance objects in context menu (eg. processor, disk, network, etc.)
+        int ix = 0;
         foreach (PerformanceCounterCategory cat in PerformanceCounterCategory.GetCategories())
         {
-            int ix = 0;
             TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems.Add(new MenuItem
             {
                 Text = cat.CategoryName,
@@ -138,9 +138,11 @@ public partial class COUNTERSX : ApplicationContext
 
         //INSTANCES
         //Now fill instances list for selected category
-        foreach (string inst in PerformanceCounterCategory.GetCategories()[97].GetInstanceNames())
+        ix = 0;
+        foreach (string inst in PerformanceCounterCategory.GetCategories()[
+            MenuItemIndex("PhysicalDisk",TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems)
+            ].GetInstanceNames())
         {
-            int ix = 0;
             TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems.Add(new MenuItem
             {
                 Text = inst,
@@ -161,9 +163,11 @@ public partial class COUNTERSX : ApplicationContext
 
         //COUNTERS
         //Fill list of available counters
-        foreach (PerformanceCounter cnt in PerformanceCounterCategory.GetCategories()[97].GetCounters("_Total"))
+        ix = 0;
+        foreach (PerformanceCounter cnt in PerformanceCounterCategory.GetCategories()[
+            MenuItemIndex("PhysicalDisk", TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems)
+            ].GetCounters("_Total"))
         {
-            int ix = 0;
             TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems.Add(new MenuItem
             {
                 Text = cnt.CounterName,
@@ -216,6 +220,15 @@ public partial class COUNTERSX : ApplicationContext
             if (mi.Checked)
                 return mi.Name;
         return null; //in case nothing is selected, but should never happen
+    }
+
+    //Get menu item index by name
+    int MenuItemIndex(string Name, MenuItem.MenuItemCollection MenuItems)
+    {
+        foreach (MenuItem mi in MenuItems)
+            if (mi.Name == Name)
+                return (int)mi.Tag;
+        return -1;
     }
 
     //Handle menu exit
