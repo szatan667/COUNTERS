@@ -7,10 +7,10 @@ using System.Windows.Forms;
 //Disk acticity icon object
 public class DiskLed
 {
-    //Available colors and drawing position
+    //Default colors and drawing position
     public Color background = Color.FromArgb(0, 0, 0, 0); //background color
     public Color ledOFF = Color.Black;
-    public Color ledON = Color.FromArgb(0, 255, 0);
+    public Color ledON;
     public Rectangle pos;
 
     //Drawing area to icon size ratio
@@ -23,6 +23,11 @@ public class DiskLed
             (int)(gfx.VisibleClipBounds.Height * pr / 2),
             (int)(gfx.VisibleClipBounds.Width * sr),
             (int)(gfx.VisibleClipBounds.Height * sr));
+    }
+
+    public void SetLedColor(Color c)
+    {
+        ledON = c;
     }
 }
 
@@ -39,10 +44,11 @@ public partial class COUNTERSX : ApplicationContext
     private extern static bool DestroyIcon(IntPtr handle);
 
     //Performance counter object to read disk activity
-    PerformanceCounter pc;
+    private PerformanceCounter PC;
     private readonly int[] val = new int[5];
+    private int avg;
 
-    //Icon drawing variables
+    //Tray icon drawing variables
     private readonly NotifyIcon TrayIcon;
     private readonly Bitmap bmp;
     private IntPtr h;
@@ -65,13 +71,28 @@ public partial class COUNTERSX : ApplicationContext
             Icon = null,
             ContextMenu = new ContextMenu(new MenuItem[]
             {
-                new MenuItem() {Text = "CATEGORY", Name = "MenuCategory"},
-                new MenuItem() {Text = "INSTANCE", Name = "MenuInstance"},
-                new MenuItem() {Text = "COUNTER", Name = "MenuCounter"},
+                //Counter definition related
+                new MenuItem {Text = "CATEGORY", Name = "MenuCategory"},
+                new MenuItem {Text = "INSTANCE", Name = "MenuInstance"},
+                new MenuItem {Text = "COUNTER", Name = "MenuCounter"},
+
+                //Color selection
+                new MenuItem("-") {Name = "Separator" },
+                new MenuItem("Colors", new MenuItem[]
+                {
+                    new MenuItem("Red", MenuCheckMark) {Name = "ColorRed", Tag = Color.Red, RadioCheck = true },
+                    new MenuItem("Green", MenuCheckMark) {Name = "ColorGreen", Tag = Color.Lime, RadioCheck = true, Checked = true },
+                    new MenuItem("Blue", MenuCheckMark) {Name = "ColorBlue", Tag = Color.LightSkyBlue, RadioCheck = true },
+                })
+                {
+                    Name = "MenuColors"
+                },
+
+                //Exit app
                 new MenuItem("-") {Name = "Separator" },
                 new MenuItem("Exit", MenuExit)
                 {
-                    OwnerDraw = true,
+                    DefaultItem = true,
                     Name = "MenuExit",
                     Tag = new Font("Anonymous Pro", 16, FontStyle.Bold)
                 }
@@ -89,136 +110,162 @@ public partial class COUNTERSX : ApplicationContext
         //Icon blink timer
         TimerIcon = new Timer
         {
-            Interval = TimerCnt.Interval / 2,
+            Interval = TimerCnt.Interval / 2, //blink twice as fast as readout goes
             Enabled = false
         };
         TimerIcon.Tick += TimerIcon_Tick;
 
-        //Register custom drawing routines menu events
-        foreach (MenuItem mi in TrayIcon.ContextMenu.MenuItems)
-        {
-            mi.DrawItem += MenuItemDraw;
-            mi.MeasureItem += MenuItemMeasure;
-        }
-
+        //TODO - default counter is hardcoded and will crash in non-English version of Windows - have to make this generic somehow
         //CATEGORIES
         //Fill in list of performance objects in context menu (eg. processor, disk, network, etc.)
-        int ix = 0;
-        foreach (PerformanceCounterCategory cat in PerformanceCounterCategory.GetCategories())
-        {
-            TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems.Add(new MenuItem
-            {
-                Text = cat.CategoryName,
-                Name = cat.CategoryName,
-                Tag = ix++,
-                RadioCheck = true,
-                Checked = false
-            });
-        }
-
-        //Pick physical disk by default
-        foreach (MenuItem mi in TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems)
-        {
-            mi.Checked = false;
-            if (mi.Name == "PhysicalDisk" ||
-                mi.Name == "Fysisk disk" || 
-                mi.Name == "Dysk fizyczny")
-                mi.Checked = true;
-        }
+        FillMenu(TrayIcon.ContextMenu.MenuItems["MenuCategory"], PerformanceCounterCategory.GetCategories());
+        MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems["PhysicalDisk"], null);
 
         //INSTANCES
-        //Now fill instances list for selected category
-        ix = 0;
-        foreach (string inst in PerformanceCounterCategory.GetCategories()[
-            MenuItemIndex("PhysicalDisk",TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems)
-            ].GetInstanceNames())
-        {
-            TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems.Add(new MenuItem
-            {
-                Text = inst,
-                Name = inst,
-                Tag = ix++,
-                RadioCheck = true,
-                Checked = false
-            });
-        }
-
-        //Pick total (all disks) by default
-        foreach (MenuItem mi in TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems)
-        {
-            mi.Checked = false;
-            if (mi.Name == "_Total")
-                mi.Checked = true;
-        }
+        //Instance list is already filled in by menu click event
+        //Just check "total" instance as default
+        MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems["_Total"], null);
 
         //COUNTERS
-        //Fill list of available counters
-        ix = 0;
-        foreach (PerformanceCounter cnt in PerformanceCounterCategory.GetCategories()[
-            MenuItemIndex("PhysicalDisk", TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems)
-            ].GetCounters("_Total"))
-        {
-            TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems.Add(new MenuItem
-            {
-                Text = cnt.CounterName,
-                Name = cnt.CounterName,
-                Tag = ix++,
-                RadioCheck = true,
-                Checked = false
-            });
-        }
+        //Same for counters, pick disk time as default
+        MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems["% Disk Time"], null);
 
-        //Pick disk time as default counter
-        foreach (MenuItem mi in TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems)
-        {
-            if (mi.Name == "% Disk Time" ||
-                mi.Name == "% Disktid" ||
-                mi.Name == "% Czas dysku")
-                mi.Checked = true;
-        }
-
-        //Now we are ready to create actual performance counter object
-        try
-        {
-            pc = new PerformanceCounter(
-                SelectedMenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems),
-                SelectedMenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems),
-                SelectedMenuItemName(TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems));
-        }
-        catch (Exception e) 
-        {
-            TimerCnt.Enabled = false;
-            MessageBox.Show("Well, that's embarassing but something went wrong with counter creation" + 
-                Environment.NewLine + e.Message,
-                "Bye bye...");
-            Application.Exit();
-        }
-
-        //Create graphics contex from tray icon?
+        //Create graphics context
         bmp = new Bitmap(32, 32);
         gfx = Graphics.FromImage(bmp);
         gfx.SmoothingMode = SmoothingMode.HighQuality;
+
+        //And lastly - new LED object, set default color (one of them has been checked already in constructor)
         led = new DiskLed(gfx);
+        MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuColors"].MenuItems[MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuColors"])], null);
     } //MAIN CONSTRUCTOR END
 
-    //Get selected item name
-    string SelectedMenuItemName(MenuItem.MenuItemCollection MenuItems)
+    //Fill counter menu list with desired object list
+    private void FillMenu(MenuItem mi, object[] filler)
     {
-        foreach (MenuItem mi in MenuItems)
+        mi.MenuItems.Clear();
+
+        switch (filler)
+        {
+            case PerformanceCounterCategory[] pcc:
+                foreach (PerformanceCounterCategory cat in pcc)
+                    mi.MenuItems.Add(new MenuItem(cat.CategoryName, MenuCheckMark)
+                    {
+                        Name = cat.CategoryName,
+                        RadioCheck = true,
+                        Checked = false,
+                        Tag = cat
+                    });
+                break;
+
+            case string[] s:
+                foreach (string inst in s)
+                    mi.MenuItems.Add(new MenuItem(inst, MenuCheckMark)
+                    {
+                        Name = inst,
+                        RadioCheck = true,
+                        Checked = false,
+                        Tag = inst
+                    });
+                break;
+
+            case PerformanceCounter[] pc:
+                foreach (PerformanceCounter cnt in pc)
+                    mi.MenuItems.Add(new MenuItem(cnt.CounterName, MenuCheckMark)
+                    {
+                        Name = cnt.CounterName,
+                        RadioCheck = true,
+                        Checked = false,
+                        Tag = cnt
+                    });
+                break;
+
+            default:
+                throw new Exception("Counter menu build failed :(");
+        }
+    }
+
+    //Sets menu item check mark and executes action according to item TAG type
+    private void MenuCheckMark(object s, EventArgs e)
+    {
+        //Go through menu items at the same level (all from sender's parent)
+        //Don't look for currently checked item - just clear them all first...
+        foreach (MenuItem mi in (s as MenuItem).Parent.MenuItems)
+            mi.Checked = false;
+
+        //...and then mark desired as checked
+        (s as MenuItem).Checked = true;
+
+        //Now execute click action according to sender 
+        switch ((s as MenuItem).Tag)
+        {
+            //Color click
+            case Color c:
+                led.SetLedColor(c);
+                break;
+
+            //Category click - clean instances&counters submenus and get list of instances
+            case PerformanceCounterCategory pcc:
+                TimerCnt.Enabled = false;
+                if (PC != null) PC.Dispose();
+                TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems.Clear();
+                TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems.Clear();
+                FillMenu(TrayIcon.ContextMenu.MenuItems["MenuInstance"], pcc.GetInstanceNames());
+                break;
+
+            //Instance click - clean counters submenu and fill it with fresh list
+            case string inst:
+                TimerCnt.Enabled = false;
+                if (PC != null) PC.Dispose();
+                TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems.Clear();
+                var mitem = MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCategory"]);
+                var midx = MenuItemIndex(mitem, TrayIcon.ContextMenu.MenuItems["MenuCategory"]);
+                FillMenu(TrayIcon.ContextMenu.MenuItems["MenuCounter"], PerformanceCounterCategory.GetCategories()[midx].GetCounters(inst));
+                break;
+
+            //Counter click - take this counter as valid
+            case PerformanceCounter pc:
+                TimerCnt.Enabled = true;
+                try
+                {
+                    PC = pc;
+                }
+                catch (Exception ex)
+                {
+                    TimerCnt.Enabled = false;
+                    MessageBox.Show("Well, that's embarassing but something went wrong with counter creation" +
+                        Environment.NewLine + ex.Message,
+                        "Bye bye...");
+                    Application.Exit();
+                }
+
+                break;
+
+            default:
+                throw new Exception("Counter menu click event failed :(" + Environment.NewLine + s);
+        }
+
+        //MAJOR TODO - counter selection
+    }
+
+    //Get selected item name
+    string MenuItemName(MenuItem MenuItem)
+    {
+        foreach (MenuItem mi in MenuItem.MenuItems)
             if (mi.Checked)
                 return mi.Name;
-        return null; //in case nothing is selected, but should never happen
+        return null;
     }
 
     //Get menu item index by name
-    int MenuItemIndex(string Name, MenuItem.MenuItemCollection MenuItems)
+    int MenuItemIndex(string Name, MenuItem MenuItem)
     {
-        foreach (MenuItem mi in MenuItems)
-            if (mi.Name == Name)
-                return (int)mi.Tag;
+        for (int i = 0; i < MenuItem.MenuItems.Count; i++)
+            if (MenuItem.MenuItems[i].Name == Name)
+                return i;
         return -1;
     }
-
+    
     //Handle menu exit
     private void MenuExit(object s, EventArgs e)
     {
@@ -235,13 +282,13 @@ public partial class COUNTERSX : ApplicationContext
             //Shift values left, make room for new readout
             for (int i = 0; i < val.Length - 1; i++)
                 val[i] = val[i + 1];
-            val[val.Length - 1] = (int)pc.NextValue();
+            val[val.Length - 1] = (int)PC.NextValue();
 
             int sum = 0;
             for (int i = 0; i < val.Length; i++)
                 sum += val[i];
 
-            int avg = sum / val.Length;
+            avg = sum / val.Length;
 
             //Now do some scaling - disk load is usually below 50% so pump it up a bit
             if (avg <= 2) avg *= 10;
@@ -251,8 +298,8 @@ public partial class COUNTERSX : ApplicationContext
             else if (avg <= 50) avg = (int)(avg * 1.5);
             else if (avg <= 75) avg = (int)(avg * 1.25);
             else if (avg <= 100) avg *= 1;
+            //else if (avg > 100) avg = 100; //just in case if for some reason calc goes out of bounds (eg. dummy readout out of scale?)
 
-            //DrawTrayIcon(Color.FromArgb(0, avg * 255 / 100, 0), true);
             DrawTrayIcon(Color.FromArgb(
                 led.ledON.R * avg / 100,
                 led.ledON.G * avg / 100,
@@ -263,7 +310,13 @@ public partial class COUNTERSX : ApplicationContext
         {
             TimerCnt.Enabled = false;
             MessageBox.Show("Well, that's embarassing but something went wrong with counter readout" +
-                Environment.NewLine + ex.Message,
+                Environment.NewLine + ex.Message +
+                Environment.NewLine + avg +
+                Environment.NewLine + val[0] +
+                Environment.NewLine + val[1] +
+                Environment.NewLine + val[2] +
+                Environment.NewLine + val[3] +
+                Environment.NewLine + val[4],
                 "Bye bye...");
             Application.Exit();
         }
@@ -292,28 +345,5 @@ public partial class COUNTERSX : ApplicationContext
     private void TimerIcon_Tick(object s, EventArgs e)
     {
         DrawTrayIcon(led.ledOFF, false);
-    }
-
-    //Custom menu item drawing - measure the area
-    private void MenuItemMeasure(object s, MeasureItemEventArgs e)
-    {
-        e.ItemHeight = (int)e.Graphics.MeasureString((s as MenuItem).Text, (Font)(s as MenuItem).Tag).Height;
-        e.ItemWidth = (int)e.Graphics.MeasureString((s as MenuItem).Text, (Font)(s as MenuItem).Tag).Width;
-    }
-
-    //Custom menu item drawing - draw item
-    private void MenuItemDraw(object s, DrawItemEventArgs e)
-    {
-        //Mouse over
-        if ((e.State & DrawItemState.Selected) != DrawItemState.None)
-            e.Graphics.FillRectangle(new LinearGradientBrush(e.Bounds, Color.Red, Color.Orange, 75), e.Bounds);
-        //Mouse out
-        else
-            e.Graphics.FillRectangle(new LinearGradientBrush(e.Bounds, Color.Green, Color.Gray, 115), e.Bounds);
-
-        e.Graphics.DrawString((s as MenuItem).Text,
-            (Font)(s as MenuItem).Tag,
-            Brushes.White,
-            e.Bounds);
     }
 }
