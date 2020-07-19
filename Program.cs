@@ -8,12 +8,9 @@ using System.Windows.Forms;
 public class DiskLed
 {
     //Available colors and drawing position
-    public SolidBrush colorbg;
-    public SolidBrush color0;
-    public SolidBrush color25;
-    public SolidBrush color50;
-    public SolidBrush color75;
-    public SolidBrush color100;
+    public Color background = Color.FromArgb(0, 0, 0, 0); //background color
+    public Color ledOFF = Color.Black;
+    public Color ledON = Color.FromArgb(0, 255, 0);
     public Rectangle pos;
 
     //Drawing area to icon size ratio
@@ -21,15 +18,7 @@ public class DiskLed
     private const double sr = 1 - pr; //size to width ratio
 
     public DiskLed(Graphics gfx)
-    {
-        //Define actual colors here
-        colorbg = new SolidBrush(Color.FromArgb(0, 0, 0, 0));
-        color0 = new SolidBrush(Color.FromArgb(0, 32, 0));
-        color25 = new SolidBrush(Color.FromArgb(0, 64, 0));
-        color50 = new SolidBrush(Color.FromArgb(0, 128, 0));
-        color75 = new SolidBrush(Color.FromArgb(0, 192, 0));
-        color100 = new SolidBrush(Color.FromArgb(0, 255, 0));
-        
+    {        
         pos = new Rectangle((int)(gfx.VisibleClipBounds.Width * pr / 2),
             (int)(gfx.VisibleClipBounds.Height * pr / 2),
             (int)(gfx.VisibleClipBounds.Width * sr),
@@ -59,6 +48,7 @@ public partial class COUNTERSX : ApplicationContext
     private IntPtr h;
     private readonly Graphics gfx;
     private readonly DiskLed led;
+    private SolidBrush brush;
 
     //Timers - counter readout interval and icon blinking interval
     private readonly Timer TimerCnt;
@@ -209,8 +199,6 @@ public partial class COUNTERSX : ApplicationContext
         gfx = Graphics.FromImage(bmp);
         gfx.SmoothingMode = SmoothingMode.HighQuality;
         led = new DiskLed(gfx);
-
-        DrawTrayIcon(led.color0, true);
     } //MAIN CONSTRUCTOR END
 
     //Get selected item name
@@ -255,16 +243,21 @@ public partial class COUNTERSX : ApplicationContext
 
             int avg = sum / val.Length;
 
-            if (avg <= 1)
-                DrawTrayIcon(led.color0, true);
-            else if (avg <= 5)
-                DrawTrayIcon(led.color25, true);
-            else if (avg <= 15)
-                DrawTrayIcon(led.color50, true);
-            else if (avg <= 35)
-                DrawTrayIcon(led.color75, true);
-            else if (avg <= 100)
-                DrawTrayIcon(led.color100, true);
+            //Now do some scaling - disk load is usually below 50% so pump it up a bit
+            if (avg <= 2) avg *= 10;
+            else if (avg <= 5) avg *= 7;
+            else if (avg <= 10) avg *= 4;
+            else if (avg <= 25) avg *= 2;
+            else if (avg <= 50) avg = (int)(avg * 1.5);
+            else if (avg <= 75) avg = (int)(avg * 1.25);
+            else if (avg <= 100) avg *= 1;
+
+            //DrawTrayIcon(Color.FromArgb(0, avg * 255 / 100, 0), true);
+            DrawTrayIcon(Color.FromArgb(
+                led.ledON.R * avg / 100,
+                led.ledON.G * avg / 100,
+                led.ledON.B * avg / 100
+                ), true);
         }
         catch (Exception ex)
         {
@@ -277,13 +270,15 @@ public partial class COUNTERSX : ApplicationContext
     }
 
     //Draw tray icon like LED light
-    private void DrawTrayIcon(Brush b, bool t)
+    private void DrawTrayIcon(Color c, bool t)
     {
+        //brush.Dispose();
+        brush = new SolidBrush(c);
         DestroyIcon(h); //destroy current icon to avoid handle leaking
 
         //Draw colored circle
-        gfx.Clear(led.colorbg.Color);
-        gfx.FillEllipse(b, led.pos);
+        gfx.Clear(led.background);
+        gfx.FillEllipse(brush, led.pos);
 
         //Send drawn image to tray icon
         h = bmp.GetHicon();
@@ -296,7 +291,7 @@ public partial class COUNTERSX : ApplicationContext
     //Disable icon perodically to make it blink
     private void TimerIcon_Tick(object s, EventArgs e)
     {
-        DrawTrayIcon(led.color0, false);
+        DrawTrayIcon(led.ledOFF, false);
     }
 
     //Custom menu item drawing - measure the area
