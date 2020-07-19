@@ -218,9 +218,10 @@ public partial class COUNTERSX : ApplicationContext
                 TimerCnt.Enabled = false;
                 if (PC != null) PC.Dispose();
                 TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems.Clear();
-                var mitem = MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCategory"]);
-                var midx = MenuItemIndex(mitem, TrayIcon.ContextMenu.MenuItems["MenuCategory"]);
-                FillMenu(TrayIcon.ContextMenu.MenuItems["MenuCounter"], PerformanceCounterCategory.GetCategories()[midx].GetCounters(inst));
+                FillMenu(TrayIcon.ContextMenu.MenuItems["MenuCounter"],
+                         PerformanceCounterCategory.GetCategories()[MenuItemIndex(
+                             MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCategory"]),
+                             TrayIcon.ContextMenu.MenuItems["MenuCategory"])].GetCounters(inst));
                 break;
 
             //Counter click - take this counter as valid
@@ -234,7 +235,8 @@ public partial class COUNTERSX : ApplicationContext
                 {
                     TimerCnt.Enabled = false;
                     MessageBox.Show("Well, that's embarassing but something went wrong with counter creation" +
-                        Environment.NewLine + ex.Message,
+                        Environment.NewLine + ex.Message +
+                        Environment.NewLine + s,
                         "Bye bye...");
                     Application.Exit();
                 }
@@ -298,7 +300,7 @@ public partial class COUNTERSX : ApplicationContext
             else if (avg <= 50) avg = (int)(avg * 1.5);
             else if (avg <= 75) avg = (int)(avg * 1.25);
             else if (avg <= 100) avg *= 1;
-            //else if (avg > 100) avg = 100; //just in case if for some reason calc goes out of bounds (eg. dummy readout out of scale?)
+            else if (avg > 100) avg = 100; //just in case if for some reason calc goes out of bounds (eg. dummy readout out of scale?)
 
             DrawTrayIcon(Color.FromArgb(
                 led.ledON.R * avg / 100,
