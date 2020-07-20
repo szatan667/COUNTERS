@@ -2,9 +2,13 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Forms;
 
-//Disk acticity icon object
+//Disk activity icon object
 public class DiskLed
 {
     //Default colors and drawing position
@@ -18,7 +22,7 @@ public class DiskLed
     private const double sr = 1 - pr; //size to width ratio
 
     public DiskLed(Graphics gfx)
-    {        
+    {
         pos = new Rectangle((int)(gfx.VisibleClipBounds.Width * pr / 2),
             (int)(gfx.VisibleClipBounds.Height * pr / 2),
             (int)(gfx.VisibleClipBounds.Width * sr),
@@ -31,6 +35,7 @@ public class DiskLed
     }
 }
 
+//Main couter class
 public partial class COUNTERSX : ApplicationContext
 {
     //Program entry point
@@ -59,6 +64,9 @@ public partial class COUNTERSX : ApplicationContext
     //Timers - counter readout interval and icon blinking interval
     private readonly Timer TimerCnt;
     private readonly Timer TimerIcon;
+
+    //Settings in ini file
+    private readonly IniFile ini = new IniFile();
 
     //Main object initialize
     public COUNTERSX()
@@ -103,7 +111,7 @@ public partial class COUNTERSX : ApplicationContext
         TimerCnt = new Timer
         {
             Interval = 50,
-            Enabled = true,
+            Enabled = false,
         };
         TimerCnt.Tick += TimerCnt_Tick;
 
@@ -115,20 +123,28 @@ public partial class COUNTERSX : ApplicationContext
         };
         TimerIcon.Tick += TimerIcon_Tick;
 
-        //TODO - default counter is hardcoded and will crash in non-English version of Windows - have to make this generic somehow
         //CATEGORIES
         //Fill in list of performance objects in context menu (eg. processor, disk, network, etc.)
         FillMenu(TrayIcon.ContextMenu.MenuItems["MenuCategory"], PerformanceCounterCategory.GetCategories());
-        MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems["PhysicalDisk"], null);
 
-        //INSTANCES
-        //Instance list is already filled in by menu click event
-        //Just check "total" instance as default
-        MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems["_Total"], null);
+        //Now try to get counter from ini file
+        //If config not present, don't create any counter yet, let user pick it
+        string _catname = ini.Read("categoryName");
+        string _instname = ini.Read("instanceName");
+        string _cntname = ini.Read("counterName");
 
-        //COUNTERS
-        //Same for counters, pick disk time as default
-        MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems["% Disk Time"], null);
+        if (_catname != string.Empty && _instname != string.Empty && _cntname != string.Empty)
+        {
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems[_catname], null);
+
+            //INSTANCES
+            //Instance list is already filled in by menu click event
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems[_instname], null);
+
+            //COUNTERS
+            //Same for counters
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems[_cntname], null);
+        }
 
         //Create graphics context
         bmp = new Bitmap(32, 32);
@@ -138,6 +154,7 @@ public partial class COUNTERSX : ApplicationContext
         //And lastly - new LED object, set default color (one of them has been checked already in constructor)
         led = new DiskLed(gfx);
         MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuColors"].MenuItems[MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuColors"])], null);
+        DrawTrayIcon(led.ledOFF, false);
     } //MAIN CONSTRUCTOR END
 
     //Fill counter menu list with desired object list
@@ -230,6 +247,9 @@ public partial class COUNTERSX : ApplicationContext
                 try
                 {
                     PC = pc;
+                    ini.Write("categoryName", MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCategory"]));
+                    ini.Write("instanceName", MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuInstance"]));
+                    ini.Write("counterName", MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCounter"]));
                 }
                 catch (Exception ex)
                 {
@@ -267,7 +287,7 @@ public partial class COUNTERSX : ApplicationContext
                 return i;
         return -1;
     }
-    
+
     //Handle menu exit
     private void MenuExit(object s, EventArgs e)
     {
@@ -347,5 +367,50 @@ public partial class COUNTERSX : ApplicationContext
     private void TimerIcon_Tick(object s, EventArgs e)
     {
         DrawTrayIcon(led.ledOFF, false);
+    }
+}
+
+//INI file handler
+public class IniFile
+{
+    readonly string Path;
+    readonly string EXE = Assembly.GetExecutingAssembly().GetName().Name;
+
+    [DllImport("kernel32", CharSet = CharSet.Unicode)]
+    static extern long WritePrivateProfileString(string Section, string Key, string Value, string FilePath);
+
+    [DllImport("kernel32", CharSet = CharSet.Unicode)]
+    static extern int GetPrivateProfileString(string Section, string Key, string Default, StringBuilder RetVal, int Size, string FilePath);
+
+    public IniFile(string IniPath = null)
+    {
+        Path = new FileInfo(IniPath ?? EXE + ".ini").FullName.ToString();
+    }
+
+    public string Read(string Key, string Section = null)
+    {
+        var RetVal = new StringBuilder(255);
+        GetPrivateProfileString(Section ?? EXE, Key, "", RetVal, 255, Path);
+        return RetVal.ToString();
+    }
+
+    public void Write(string Key, string Value, string Section = null)
+    {
+        WritePrivateProfileString(Section ?? EXE, Key, Value, Path);
+    }
+
+    public void DeleteKey(string Key, string Section = null)
+    {
+        Write(Key, null, Section ?? EXE);
+    }
+
+    public void DeleteSection(string Section = null)
+    {
+        Write(null, null, Section ?? EXE);
+    }
+
+    public bool KeyExists(string Key, string Section = null)
+    {
+        return Read(Key, Section).Length > 0;
     }
 }
