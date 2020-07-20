@@ -15,7 +15,15 @@ public class DiskLed
     public Color background = Color.FromArgb(0, 0, 0, 0); //background color
     public Color ledOFF = Color.Black;
     public Color ledON;
+    public shapes shape;
     public Rectangle pos;
+
+    //Shapes
+    public enum shapes
+    {
+        Circle,
+        Rectangle
+    }
 
     //Drawing area to icon size ratio
     private const double pr = 0.2;    //position to widht ratio
@@ -32,6 +40,19 @@ public class DiskLed
     public void SetLedColor(Color c)
     {
         ledON = c;
+    }
+
+    public void DrawIcon()
+    {
+        switch (shape)
+        {
+            case shapes.Circle:
+                break;
+            case shapes.Rectangle:
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -84,9 +105,15 @@ public partial class COUNTERSX : ApplicationContext
                 new MenuItem {Text = "INSTANCE", Name = "MenuInstance"},
                 new MenuItem {Text = "COUNTER", Name = "MenuCounter"},
 
-                //Color selection
+                //Settings
                 new MenuItem("-") {Name = "Separator"},
-                new MenuItem("Pick a color...", MenuCheckMark) {Name = "ColorCustom", Tag = new ColorDialog()},
+                new MenuItem("Color...", MenuCheckMark) {Tag = new ColorDialog()},
+                new MenuItem("Shape", new MenuItem[]
+                {
+                    new MenuItem("Circle", MenuCheckMark) {Name = ((int)DiskLed.shapes.Circle).ToString(), Tag = DiskLed.shapes.Circle},
+                    new MenuItem("Rectangle", MenuCheckMark) {Name = ((int)DiskLed.shapes.Rectangle).ToString(), Tag = DiskLed.shapes.Rectangle}
+                }
+                ) {Name = "MenuShape" },
 
                 //Exit app
                 new MenuItem("-") {Name = "Separator"},
@@ -148,14 +175,27 @@ public partial class COUNTERSX : ApplicationContext
         string _b = ini.Read("ledColorB");
         if (_r != string.Empty && _g != string.Empty && _b != string.Empty)
         {
-            int r, g, b;
-            int.TryParse(_r, out r);
-            int.TryParse(_g, out g);
-            int.TryParse(_b, out b);
+            //int r, g, b;
+            int.TryParse(_r, out int r);
+            int.TryParse(_g, out int g);
+            int.TryParse(_b, out int b);
             led.SetLedColor(Color.FromArgb(r, g, b));
         }
         else
             led.SetLedColor(Color.Lime);
+
+        //Now for led shape
+        string _shape = ini.Read("ledShape");
+        if (_shape != string.Empty)
+        {
+            int.TryParse(_shape, out int s);
+            //led.shape = (DiskLed.shapes)s;
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuShape"].MenuItems[s], null);
+        }
+        else
+            led.shape = DiskLed.shapes.Circle;
+
+        //Start with led off
         DrawTrayIcon(led.ledOFF, false);
     } //MAIN CONSTRUCTOR END
 
@@ -220,10 +260,16 @@ public partial class COUNTERSX : ApplicationContext
                 if (cd.ShowDialog() == DialogResult.OK)
                 {
                     led.SetLedColor(cd.Color);
-                    ini.Write("ledColorR", cd.Color.R.ToString());
-                    ini.Write("ledColorG", cd.Color.G.ToString());
-                    ini.Write("ledColorB", cd.Color.B.ToString());
+                    ini.Write("ledColorR", led.ledON.R.ToString());
+                    ini.Write("ledColorG", led.ledON.G.ToString());
+                    ini.Write("ledColorB", led.ledON.B.ToString());
                 }
+                break;
+
+            //Shape click
+            case DiskLed.shapes sh:
+                led.shape = sh;
+                ini.Write("ledShape", ((int)led.shape).ToString());
                 break;
 
             //Category click - clean instances&counters submenus and get list of instances
@@ -361,13 +407,22 @@ public partial class COUNTERSX : ApplicationContext
     //Draw tray icon like LED light
     private void DrawTrayIcon(Color c, bool t)
     {
-        //brush.Dispose();
         brush = new SolidBrush(c);
         DestroyIcon(h); //destroy current icon to avoid handle leaking
 
-        //Draw colored circle
+        //Draw desired led shape
         gfx.Clear(led.background);
-        gfx.FillEllipse(brush, led.pos);
+        switch (led.shape)
+        {
+            case DiskLed.shapes.Circle:
+                gfx.FillEllipse(brush, led.pos);
+                break;
+            case DiskLed.shapes.Rectangle:
+                gfx.FillRectangle(brush, led.pos);
+                break;
+            default:
+                break;
+        }
 
         //Send drawn image to tray icon
         h = bmp.GetHicon();
