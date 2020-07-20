@@ -45,7 +45,7 @@ public partial class COUNTERSX : ApplicationContext
     }
 
     //To allow icon destroyal
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [DllImport("user32.dll")]
     private extern static bool DestroyIcon(IntPtr handle);
 
     //Performance counter object to read disk activity
@@ -85,19 +85,11 @@ public partial class COUNTERSX : ApplicationContext
                 new MenuItem {Text = "COUNTER", Name = "MenuCounter"},
 
                 //Color selection
-                new MenuItem("-") {Name = "Separator" },
-                new MenuItem("Colors", new MenuItem[]
-                {
-                    new MenuItem("Red", MenuCheckMark) {Name = "ColorRed", Tag = Color.Red, RadioCheck = true },
-                    new MenuItem("Green", MenuCheckMark) {Name = "ColorGreen", Tag = Color.Lime, RadioCheck = true, Checked = true },
-                    new MenuItem("Blue", MenuCheckMark) {Name = "ColorBlue", Tag = Color.LightSkyBlue, RadioCheck = true },
-                })
-                {
-                    Name = "MenuColors"
-                },
+                new MenuItem("-") {Name = "Separator"},
+                new MenuItem("Pick a color...", MenuCheckMark) {Name = "ColorCustom", Tag = new ColorDialog()},
 
                 //Exit app
-                new MenuItem("-") {Name = "Separator" },
+                new MenuItem("-") {Name = "Separator"},
                 new MenuItem("Exit", MenuExit)
                 {
                     DefaultItem = true,
@@ -123,8 +115,7 @@ public partial class COUNTERSX : ApplicationContext
         };
         TimerIcon.Tick += TimerIcon_Tick;
 
-        //CATEGORIES
-        //Fill in list of performance objects in context menu (eg. processor, disk, network, etc.)
+        //Fill in list of performance objects available (eg. processor, disk, network, etc.)
         FillMenu(TrayIcon.ContextMenu.MenuItems["MenuCategory"], PerformanceCounterCategory.GetCategories());
 
         //Now try to get counter from ini file
@@ -133,27 +124,38 @@ public partial class COUNTERSX : ApplicationContext
         string _instname = ini.Read("instanceName");
         string _cntname = ini.Read("counterName");
 
-        if (_catname != string.Empty && _instname != string.Empty && _cntname != string.Empty)
-        {
+        //CATEGORIES
+        if (_catname != string.Empty)
             MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems[_catname], null);
-
-            //INSTANCES
-            //Instance list is already filled in by menu click event
+        //INSTANCES
+        if (_instname != string.Empty)
             MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems[_instname], null);
-
-            //COUNTERS
-            //Same for counters
+        //COUNTERS
+        if (_cntname != string.Empty)
             MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems[_cntname], null);
-        }
 
         //Create graphics context
         bmp = new Bitmap(32, 32);
         gfx = Graphics.FromImage(bmp);
         gfx.SmoothingMode = SmoothingMode.HighQuality;
 
-        //And lastly - new LED object, set default color (one of them has been checked already in constructor)
+        //Create LED object and get the color from ini file
         led = new DiskLed(gfx);
-        MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuColors"].MenuItems[MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuColors"])], null);
+
+        //Get led color from ini file or set default one
+        string _r = ini.Read("ledColorR");
+        string _g = ini.Read("ledColorG");
+        string _b = ini.Read("ledColorB");
+        if (_r != string.Empty && _g != string.Empty && _b != string.Empty)
+        {
+            int r, g, b;
+            int.TryParse(_r, out r);
+            int.TryParse(_g, out g);
+            int.TryParse(_b, out b);
+            led.SetLedColor(Color.FromArgb(r, g, b));
+        }
+        else
+            led.SetLedColor(Color.Lime);
         DrawTrayIcon(led.ledOFF, false);
     } //MAIN CONSTRUCTOR END
 
@@ -205,20 +207,23 @@ public partial class COUNTERSX : ApplicationContext
     //Sets menu item check mark and executes action according to item TAG type
     private void MenuCheckMark(object s, EventArgs e)
     {
-        //Go through menu items at the same level (all from sender's parent)
-        //Don't look for currently checked item - just clear them all first...
-        foreach (MenuItem mi in (s as MenuItem).Parent.MenuItems)
-            mi.Checked = false;
+        //Place checkmark as default
+        bool _makecheck = true;
 
-        //...and then mark desired as checked
-        (s as MenuItem).Checked = true;
-
-        //Now execute click action according to sender 
+        //Execute click action according to sender 
         switch ((s as MenuItem).Tag)
         {
-            //Color click
-            case Color c:
-                led.SetLedColor(c);
+            //Custom color click - show color dialog, change the olor only if OK pressed inside the dialog
+            case ColorDialog cd:
+                _makecheck = false;
+                cd.SolidColorOnly = true;
+                if (cd.ShowDialog() == DialogResult.OK)
+                {
+                    led.SetLedColor(cd.Color);
+                    ini.Write("ledColorR", cd.Color.R.ToString());
+                    ini.Write("ledColorG", cd.Color.G.ToString());
+                    ini.Write("ledColorB", cd.Color.B.ToString());
+                }
                 break;
 
             //Category click - clean instances&counters submenus and get list of instances
@@ -247,9 +252,6 @@ public partial class COUNTERSX : ApplicationContext
                 try
                 {
                     PC = pc;
-                    ini.Write("categoryName", MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCategory"]));
-                    ini.Write("instanceName", MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuInstance"]));
-                    ini.Write("counterName", MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCounter"]));
                 }
                 catch (Exception ex)
                 {
@@ -260,14 +262,26 @@ public partial class COUNTERSX : ApplicationContext
                         "Bye bye...");
                     Application.Exit();
                 }
-
                 break;
 
             default:
                 throw new Exception("Counter menu click event failed :(" + Environment.NewLine + s);
         }
 
-        //MAJOR TODO - counter selection
+        //Place checkmark if desired
+        if (_makecheck)
+        {
+            //Go through menu items at the same level (all from sender's parent)
+            //Don't look for currently checked item - just clear them all first...
+            foreach (MenuItem mi in (s as MenuItem).Parent.MenuItems)
+                mi.Checked = false;
+
+            //...and then mark desired as checked
+            (s as MenuItem).Checked = true;
+            ini.Write("categoryName", MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCategory"]));
+            ini.Write("instanceName", MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuInstance"]));
+            ini.Write("counterName", MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCounter"]));
+        }
     }
 
     //Get selected item name
