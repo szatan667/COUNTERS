@@ -2,7 +2,7 @@
 Windows performance counters doodle
 
 Ideas for future releases
-* add new type of icon - vertical bar, horizontal bar (both static, just another shape)
+* DONE - add new type of icon - vertical bar, horizontal bar (both static, just another shape)
 * add new option for rectangular leds - variable size to show counter value
 * OR even more - each led to have variable size, depending on shape - length for bars, radius for circle
 * variable circle could be filled or not
