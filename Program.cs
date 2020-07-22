@@ -46,19 +46,6 @@ public class DiskLed
     {
         gfx.Clear(background);
     }
-
-    public void DrawIcon()
-    {
-        switch (shape)
-        {
-            case shapes.Circle:
-                break;
-            case shapes.Rectangle:
-                break;
-            default:
-                break;
-        }
-    }
 }
 
 //Main couter class
