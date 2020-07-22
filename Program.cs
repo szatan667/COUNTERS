@@ -53,13 +53,41 @@ public class DiskLed
     }
 }
 
+//Counter object
+public class Counter
+{
+    //Each counter has tray icon, logical icon, actual system counter and set of timers
+    //TRAY ICON
+    private readonly NotifyIcon TrayIcon;
+    private readonly Bitmap bmp;
+    private IntPtr h;
+    private readonly Graphics gfx;
+    private readonly DiskLed led;
+    private SolidBrush brush;
+
+    //SYSTEM COUNTER
+    private PerformanceCounter PC;
+    private readonly int[] val = new int[5];
+    private int avg;
+
+    //TIMERS
+    private readonly Timer TimerCnt;
+    private readonly Timer TimerIcon;
+
+    //Create counter object with default constructor
+    public Counter()
+    {
+
+    }
+}
+
 //Main couter class
-public partial class COUNTERSX : ApplicationContext
+public class COUNTERS : ApplicationContext
 {
     //Program entry point
     static void Main()
     {
-        Application.Run(new COUNTERSX());
+        Application.Run(new COUNTERS());
     }
 
     //To allow icon destroyal
@@ -87,7 +115,7 @@ public partial class COUNTERSX : ApplicationContext
     private readonly IniFile ini = new IniFile();
 
     //Main object initialize
-    public COUNTERSX()
+    public COUNTERS()
     {
         //Create tray icon with context menu consisting of counter categories, types, etc.
         TrayIcon = new NotifyIcon()
