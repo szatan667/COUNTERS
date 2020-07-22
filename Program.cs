@@ -20,6 +20,7 @@ public class DiskLed
     public static Rectangle boundsRectangle;
     public static Rectangle boundsBarVertical;
     public static Rectangle boundsBarHorizontal;
+    public static Point[] boundsTriangle;
 
     //Shapes
     public enum shapes
@@ -27,7 +28,8 @@ public class DiskLed
         Circle,
         Rectangle,
         BarVertical,
-        BarHorizontal
+        BarHorizontal,
+        Triangle
     }
 
     public DiskLed(Graphics gfx)
@@ -45,6 +47,12 @@ public class DiskLed
             (int)(gfx.VisibleClipBounds.Height * 0.5 / 2),
             (int)(gfx.VisibleClipBounds.Width * 0.9),
             (int)(gfx.VisibleClipBounds.Height * 0.5));
+        boundsTriangle = new Point[]
+        {
+            new Point((int)(gfx.VisibleClipBounds.Width - 1)/ 2, 0),
+            new Point(0 , (int)gfx.VisibleClipBounds.Height - 1),
+            new Point((int)gfx.VisibleClipBounds.Width - 1, (int)gfx.VisibleClipBounds.Height - 1)
+        };
     }
 
     public void SetLedColor(Color c)
@@ -138,7 +146,8 @@ public class COUNTERS : ApplicationContext
                     new MenuItem("Circle", MenuCheckMark) {Name = ((int)DiskLed.shapes.Circle).ToString(), Tag = DiskLed.shapes.Circle},
                     new MenuItem("Rectangle", MenuCheckMark) {Name = ((int)DiskLed.shapes.Rectangle).ToString(), Tag = DiskLed.shapes.Rectangle},
                     new MenuItem("Vertical bar", MenuCheckMark) {Name = ((int)DiskLed.shapes.BarVertical).ToString(), Tag = DiskLed.shapes.BarVertical},
-                    new MenuItem("Horizontal bar", MenuCheckMark) {Name = ((int)DiskLed.shapes.BarHorizontal).ToString(), Tag = DiskLed.shapes.BarHorizontal}
+                    new MenuItem("Horizontal bar", MenuCheckMark) {Name = ((int)DiskLed.shapes.BarHorizontal).ToString(), Tag = DiskLed.shapes.BarHorizontal},
+                    new MenuItem("Triangle", MenuCheckMark) {Name = ((int)DiskLed.shapes.Triangle).ToString(), Tag = DiskLed.shapes.Triangle}
                 }
                 ) {Name = "MenuShape" },
 
@@ -451,6 +460,9 @@ public class COUNTERS : ApplicationContext
                 break;
             case DiskLed.shapes.BarHorizontal:
                 gfx.FillRectangle(brush, DiskLed.boundsBarHorizontal);
+                break;
+            case DiskLed.shapes.Triangle:
+                gfx.FillPolygon(brush, DiskLed.boundsTriangle);
                 break;
             default:
                 break;
