@@ -12,39 +12,44 @@ using System.Windows.Forms;
 public class DiskLed
 {
     //Default colors and drawing position
-    private Color background = Color.FromArgb(0, 0, 0, 0); //clear background
+    public static readonly Color background = Color.FromArgb(0, 0, 0, 0); //clear background
     public Color ledOFF = Color.Black;
     public Color ledON;
     public shapes shape;
-    public Rectangle pos;
+    public static Rectangle boundsCircle;
+    public static Rectangle boundsRectangle;
+    public static Rectangle boundsBarVertical;
+    public static Rectangle boundsBarHorizontal;
 
     //Shapes
     public enum shapes
     {
         Circle,
-        Rectangle
+        Rectangle,
+        BarVertical,
+        BarHorizontal
     }
-
-    //Drawing area to icon size ratio
-    private const double pr = 0.2;    //position to widht ratio
-    private const double sr = 1 - pr; //size to width ratio
 
     public DiskLed(Graphics gfx)
     {
-        pos = new Rectangle((int)(gfx.VisibleClipBounds.Width * pr / 2),
-            (int)(gfx.VisibleClipBounds.Height * pr / 2),
-            (int)(gfx.VisibleClipBounds.Width * sr),
-            (int)(gfx.VisibleClipBounds.Height * sr));
+        boundsCircle = new Rectangle((int)(gfx.VisibleClipBounds.Width * 0.2 / 2),
+            (int)(gfx.VisibleClipBounds.Height * 0.2 / 2),
+            (int)(gfx.VisibleClipBounds.Width * 0.8),
+            (int)(gfx.VisibleClipBounds.Height * 0.8));
+        boundsRectangle = boundsCircle;
+        boundsBarVertical = new Rectangle((int)(gfx.VisibleClipBounds.Width * 0.5 / 2),
+            (int)(gfx.VisibleClipBounds.Height * 0.1 / 2),
+            (int)(gfx.VisibleClipBounds.Width * 0.5),
+            (int)(gfx.VisibleClipBounds.Height * 0.9));
+        boundsBarHorizontal = new Rectangle((int)(gfx.VisibleClipBounds.Width * 0.1 / 2),
+            (int)(gfx.VisibleClipBounds.Height * 0.5 / 2),
+            (int)(gfx.VisibleClipBounds.Width * 0.9),
+            (int)(gfx.VisibleClipBounds.Height * 0.5));
     }
 
     public void SetLedColor(Color c)
     {
         ledON = c;
-    }
-
-    public void Clear(Graphics gfx)
-    {
-        gfx.Clear(background);
     }
 }
 
@@ -103,7 +108,9 @@ public partial class COUNTERSX : ApplicationContext
                 new MenuItem("Shape", new MenuItem[]
                 {
                     new MenuItem("Circle", MenuCheckMark) {Name = ((int)DiskLed.shapes.Circle).ToString(), Tag = DiskLed.shapes.Circle},
-                    new MenuItem("Rectangle", MenuCheckMark) {Name = ((int)DiskLed.shapes.Rectangle).ToString(), Tag = DiskLed.shapes.Rectangle}
+                    new MenuItem("Rectangle", MenuCheckMark) {Name = ((int)DiskLed.shapes.Rectangle).ToString(), Tag = DiskLed.shapes.Rectangle},
+                    new MenuItem("Vertical bar", MenuCheckMark) {Name = ((int)DiskLed.shapes.BarVertical).ToString(), Tag = DiskLed.shapes.BarVertical},
+                    new MenuItem("Horizontal bar", MenuCheckMark) {Name = ((int)DiskLed.shapes.BarHorizontal).ToString(), Tag = DiskLed.shapes.BarHorizontal}
                 }
                 ) {Name = "MenuShape" },
 
@@ -181,7 +188,6 @@ public partial class COUNTERSX : ApplicationContext
         if (_shape != string.Empty)
         {
             int.TryParse(_shape, out int s);
-            //led.shape = (DiskLed.shapes)s;
             MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuShape"].MenuItems[s], null);
         }
         else
@@ -403,14 +409,20 @@ public partial class COUNTERSX : ApplicationContext
         DestroyIcon(h); //destroy current icon to avoid handle leaking
 
         //Draw desired led shape
-        led.Clear(gfx);
+        gfx.Clear(DiskLed.background);
         switch (led.shape)
         {
             case DiskLed.shapes.Circle:
-                gfx.FillEllipse(brush, led.pos);
+                gfx.FillEllipse(brush, DiskLed.boundsCircle);
                 break;
             case DiskLed.shapes.Rectangle:
-                gfx.FillRectangle(brush, led.pos);
+                gfx.FillRectangle(brush, DiskLed.boundsRectangle);
+                break;
+            case DiskLed.shapes.BarVertical:
+                gfx.FillRectangle(brush, DiskLed.boundsBarVertical);
+                break;
+            case DiskLed.shapes.BarHorizontal:
+                gfx.FillRectangle(brush, DiskLed.boundsBarHorizontal);
                 break;
             default:
                 break;
