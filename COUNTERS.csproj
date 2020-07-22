@@ -81,20 +81,5 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\new0.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\new25.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\new50.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\new75.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\new100.ico" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

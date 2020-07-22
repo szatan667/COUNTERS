@@ -12,7 +12,7 @@ using System.Windows.Forms;
 public class DiskLed
 {
     //Default colors and drawing position
-    public Color background = Color.FromArgb(0, 0, 0, 0); //background color
+    private Color background = Color.FromArgb(0, 0, 0, 0); //clear background
     public Color ledOFF = Color.Black;
     public Color ledON;
     public shapes shape;
@@ -40,6 +40,11 @@ public class DiskLed
     public void SetLedColor(Color c)
     {
         ledON = c;
+    }
+
+    public void Clear(Graphics gfx)
+    {
+        gfx.Clear(background);
     }
 
     public void DrawIcon()
@@ -411,7 +416,7 @@ public partial class COUNTERSX : ApplicationContext
         DestroyIcon(h); //destroy current icon to avoid handle leaking
 
         //Draw desired led shape
-        gfx.Clear(led.background);
+        led.Clear(gfx);
         switch (led.shape)
         {
             case DiskLed.shapes.Circle:
