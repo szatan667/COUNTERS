@@ -32,7 +32,6 @@ public class COUNTERS : ApplicationContext
         }
         else
             for (int ix = 1; ix <= noOfCounters; ix++)
-            {
                 counters.Add(new Counter(new Counter.CounterSettings
                 {
                     //Get counter settings from INI file
@@ -45,6 +44,5 @@ public class COUNTERS : ApplicationContext
                     ColorB = ini.Read("ledColorB" + ix),
                     Shape = ini.Read("ledShape" + ix)
                 }));
-            }
     }
 }

@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+
 //Counter object
 public partial class Counter
 {
@@ -11,29 +12,29 @@ public partial class Counter
     [DllImport("user32.dll")]
     private extern static bool DestroyIcon(IntPtr handle);
 
-    //Counter number
-    private int number;
+    //Counter number, taken from caller
+    private int Number;
 
     //Each counter has tray icon, logical icon, actual system counter and set of timers
     //TRAY ICON
     public readonly NotifyIcon TrayIcon;
-    private readonly Bitmap bmp;
-    private IntPtr h;
-    private readonly Graphics gfx;
-    private readonly DiskLed led;
-    private SolidBrush brush;
-    private string name;
+    private readonly Bitmap Bitmap;
+    private IntPtr BitmapHandle;
+    private readonly Graphics GFX;
+    private readonly DiskLed LED;
+    private SolidBrush Brush;
+    private string Name;
 
     //SYSTEM COUNTER
     private PerformanceCounter PC;
-    private readonly int[] val = new int[5];
-    private int avg;
+    private readonly int[] Value = new int[5];
+    private int Average;
 
     //TIMERS
-    private readonly Timer TimerCnt;
+    private readonly Timer TimerPoll;
     private readonly Timer TimerIcon;
 
-    //Settings struct
+    //Settings struct, used by constructor
     public struct CounterSettings
     {
         public int Number;
@@ -47,10 +48,10 @@ public partial class Counter
     }
 
     //Create counter object with default constructor
-    public Counter(CounterSettings cs)
+    public Counter(CounterSettings Settings)
     {
         //Save counter number
-        number = cs.Number;
+        Number = Settings.Number;
 
         //Create tray icon with context menu consisting of counter categories, types, etc.
         TrayIcon = new NotifyIcon()
@@ -70,11 +71,11 @@ public partial class Counter
                     new MenuItem("Color...", MenuCheckMark) {Tag = new ColorDialog()},
                     new MenuItem("Shape", new MenuItem[]
                     {
-                        new MenuItem("Circle", MenuCheckMark) {Name = ((int)DiskLed.shapes.Circle).ToString(), Tag = DiskLed.shapes.Circle},
-                        new MenuItem("Rectangle", MenuCheckMark) {Name = ((int)DiskLed.shapes.Rectangle).ToString(), Tag = DiskLed.shapes.Rectangle},
-                        new MenuItem("Vertical bar", MenuCheckMark) {Name = ((int)DiskLed.shapes.BarVertical).ToString(), Tag = DiskLed.shapes.BarVertical},
-                        new MenuItem("Horizontal bar", MenuCheckMark) {Name = ((int)DiskLed.shapes.BarHorizontal).ToString(), Tag = DiskLed.shapes.BarHorizontal},
-                        new MenuItem("Triangle", MenuCheckMark) {Name = ((int)DiskLed.shapes.Triangle).ToString(), Tag = DiskLed.shapes.Triangle}
+                        new MenuItem("Circle", MenuCheckMark) {Name = ((int)DiskLed.Shapes.Circle).ToString(), Tag = DiskLed.Shapes.Circle},
+                        new MenuItem("Rectangle", MenuCheckMark) {Name = ((int)DiskLed.Shapes.Rectangle).ToString(), Tag = DiskLed.Shapes.Rectangle},
+                        new MenuItem("Vertical bar", MenuCheckMark) {Name = ((int)DiskLed.Shapes.BarVertical).ToString(), Tag = DiskLed.Shapes.BarVertical},
+                        new MenuItem("Horizontal bar", MenuCheckMark) {Name = ((int)DiskLed.Shapes.BarHorizontal).ToString(), Tag = DiskLed.Shapes.BarHorizontal},
+                        new MenuItem("Triangle", MenuCheckMark) {Name = ((int)DiskLed.Shapes.Triangle).ToString(), Tag = DiskLed.Shapes.Triangle}
                     }
                     ) {Name = "MenuShape" },
 
@@ -95,100 +96,100 @@ public partial class Counter
         };
 
         //Counter polling timer
-        TimerCnt = new Timer
+        TimerPoll = new Timer
         {
             Interval = 50,
             Enabled = false,
         };
-        TimerCnt.Tick += TimerCnt_Tick;
+        TimerPoll.Tick += TimerCnt_Tick;
 
         //Icon blink timer
         TimerIcon = new Timer
         {
-            Interval = TimerCnt.Interval / 2, //blink twice as fast as readout goes
+            Interval = TimerPoll.Interval / 2, //blink twice as fast as readout goes
             Enabled = false
         };
         TimerIcon.Tick += TimerIcon_Tick;
 
-        //Fill in list of performance objects available (eg. processor, disk, network, etc.)
+        //Fill in list of performance categories available (eg. processor, disk, network, etc.)
         FillMenu(TrayIcon.ContextMenu.MenuItems["MenuCategory"], PerformanceCounterCategory.GetCategories());
 
+        //Now 'click' each item in the menu if passed from INI file by caller
         //CATEGORIES
-        if (cs.CategoryName != string.Empty && cs.CategoryName != null)
-            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems[cs.CategoryName], null);
+        if (Settings.CategoryName != string.Empty && Settings.CategoryName != null)
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCategory"].MenuItems[Settings.CategoryName], null);
         //INSTANCES
-        if (cs.InstanceName != string.Empty && cs.InstanceName != null)
-            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems[cs.InstanceName], null);
+        if (Settings.InstanceName != string.Empty && Settings.InstanceName != null)
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems[Settings.InstanceName], null);
         //COUNTERS
-        if (cs.CounterName != string.Empty && cs.CounterName != null)
-            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems[cs.CounterName], null);
+        if (Settings.CounterName != string.Empty && Settings.CounterName != null)
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems[Settings.CounterName], null);
 
         //Create graphics context
-        bmp = new Bitmap(32, 32);
-        gfx = Graphics.FromImage(bmp);
-        gfx.SmoothingMode = SmoothingMode.HighQuality;
+        Bitmap = new Bitmap(32, 32);
+        GFX = Graphics.FromImage(Bitmap);
+        GFX.SmoothingMode = SmoothingMode.HighQuality;
 
         //Create LED object and get the color from ini file
-        led = new DiskLed(gfx);
+        LED = new DiskLed(GFX);
 
-        //Now set led color
-        if (cs.ColorR != string.Empty && cs.ColorG != string.Empty && cs.ColorB != string.Empty &&
-            cs.ColorR != null && cs.ColorG != null && cs.ColorB != null)
+        if (Settings.ColorR != string.Empty && Settings.ColorG != string.Empty && Settings.ColorB != string.Empty &&
+            Settings.ColorR != null && Settings.ColorG != null && Settings.ColorB != null)
         {
             //int r, g, b;
-            int.TryParse(cs.ColorR, out int r);
-            int.TryParse(cs.ColorG, out int g);
-            int.TryParse(cs.ColorB, out int b);
-            led.SetLedColor(Color.FromArgb(r, g, b));
+            int.TryParse(Settings.ColorR, out int r);
+            int.TryParse(Settings.ColorG, out int g);
+            int.TryParse(Settings.ColorB, out int b);
+            LED.SetLedColor(Color.FromArgb(r, g, b));
         }
         else
-            led.SetLedColor(Color.Lime);
+            LED.SetLedColor(Color.Lime);
 
         //Now for led shape
-        if (cs.Shape != string.Empty && cs.Shape != null)
+        if (Settings.Shape != string.Empty && Settings.Shape != null)
         {
-            int.TryParse(cs.Shape, out int s);
+            int.TryParse(Settings.Shape, out int s);
             MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuShape"].MenuItems[s], null);
         }
         else
-            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuShape"].MenuItems[((int)DiskLed.shapes.Circle).ToString()], null);
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuShape"].MenuItems[((int)DiskLed.Shapes.Circle).ToString()], null);
 
-        //Start with led off
-        DrawTrayIcon(led.ledOFF, false);
+        //Finally, start with led off
+        DrawTrayIcon(LED.ColorOff, false);
     }
 
-    //Sets menu item check mark and executes action according to item TAG type
-    private void MenuCheckMark(object s, EventArgs e)
+    //Set menu item check mark and execute action according to item TAG type
+    private void MenuCheckMark(object MenuItem, EventArgs e)
     {
-        //Place checkmark as default
-        bool _makecheck = true;
+        //Place checkmark as default but some items dont need that
+        bool placecheckmark = true;
 
-        //Execute click action according to sender 
-        switch ((s as MenuItem).Tag)
+        //Execute click action according to sender's tag value 
+        switch ((MenuItem as MenuItem).Tag)
         {
-            //Custom color click - show color dialog, change the olor only if OK pressed inside the dialog
+            //Color click - show color dialog, change the olor only if OK pressed inside the dialog
             case ColorDialog cd:
-                _makecheck = false;
+                placecheckmark = false;
                 cd.SolidColorOnly = true;
                 if (cd.ShowDialog() == DialogResult.OK)
                 {
-                    led.SetLedColor(cd.Color);
-                    COUNTERS.ini.Write("ledColorR" + number, led.ledON.R.ToString());
-                    COUNTERS.ini.Write("ledColorG" + number, led.ledON.G.ToString());
-                    COUNTERS.ini.Write("ledColorB" + number, led.ledON.B.ToString());
+                    LED.SetLedColor(cd.Color);
+                    COUNTERS.ini.Write("ledColorR" + Number, LED.ColorOn.R.ToString());
+                    COUNTERS.ini.Write("ledColorG" + Number, LED.ColorOn.G.ToString());
+                    COUNTERS.ini.Write("ledColorB" + Number, LED.ColorOn.B.ToString());
                 }
                 break;
 
             //Shape click
-            case DiskLed.shapes sh:
-                led.shape = sh;
-                DrawTrayIcon(led.ledOFF, false);
-                COUNTERS.ini.Write("ledShape" + number, ((int)led.shape).ToString());
+            case DiskLed.Shapes sh:
+                LED.Shape = sh;
+                DrawTrayIcon(LED.ColorOff, false);
+                COUNTERS.ini.Write("ledShape" + Number, ((int)LED.Shape).ToString());
                 break;
 
             //Category click - clean instances&counters submenus and get list of instances
             case PerformanceCounterCategory pcc:
-                TimerCnt.Enabled = false;
+                TimerPoll.Enabled = false;
                 if (PC != null) PC.Dispose();
                 TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems.Clear();
                 TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems.Clear();
@@ -197,7 +198,7 @@ public partial class Counter
 
             //Instance click - clean counters submenu and fill it with fresh list
             case string inst:
-                TimerCnt.Enabled = false;
+                TimerPoll.Enabled = false;
                 if (PC != null) PC.Dispose();
                 TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems.Clear();
                 FillMenu(TrayIcon.ContextMenu.MenuItems["MenuCounter"],
@@ -206,58 +207,60 @@ public partial class Counter
                              TrayIcon.ContextMenu.MenuItems["MenuCategory"])].GetCounters(inst));
                 break;
 
-            //Counter click - take this counter as valid
+            //Counter click - create actual counter
             case PerformanceCounter pc:
-                TimerCnt.Enabled = true;
+                TimerPoll.Enabled = true;
                 try
                 {
                     PC = pc;
-                    name = PC.CategoryName + "\\" + PC.InstanceName + "\\" + PC.CounterName;
-                    TrayIcon.Text = name;
+                    Name = PC.CategoryName + "\\" + PC.InstanceName + "\\" + PC.CounterName;
+                    TrayIcon.Text = Name;
                 }
                 catch (Exception ex)
                 {
-                    TimerCnt.Enabled = false;
+                    TimerPoll.Enabled = false;
                     MessageBox.Show("Well, that's embarassing but something went wrong with counter creation" +
                         Environment.NewLine + ex.Message +
-                        Environment.NewLine + s,
+                        Environment.NewLine + MenuItem,
                         "Bye bye...");
                     Application.Exit();
                 }
                 break;
 
             default:
-                throw new Exception("Counter menu click event failed :(" + Environment.NewLine + s);
+                throw new Exception("Counter menu click event failed :(" + Environment.NewLine + MenuItem);
         }
 
         //Place checkmark if desired
-        if (_makecheck)
+        if (placecheckmark)
         {
             //Go through menu items at the same level (all from sender's parent)
             //Don't look for currently checked item - just clear them all first...
-            foreach (MenuItem mi in (s as MenuItem).Parent.MenuItems)
+            foreach (MenuItem mi in (MenuItem as MenuItem).Parent.MenuItems)
                 mi.Checked = false;
 
             //...and then mark desired as checked
-            (s as MenuItem).Checked = true;
+            (MenuItem as MenuItem).Checked = true;
 
             //Write changed counter settings to INI file
-            COUNTERS.ini.Write("categoryName" + number, MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCategory"]));
-            COUNTERS.ini.Write("instanceName" + number, MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuInstance"]));
-            COUNTERS.ini.Write("counterName" + number, MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCounter"]));
+            COUNTERS.ini.Write("categoryName" + Number, MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCategory"]));
+            COUNTERS.ini.Write("instanceName" + Number, MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuInstance"]));
+            COUNTERS.ini.Write("counterName" + Number, MenuItemName(TrayIcon.ContextMenu.MenuItems["MenuCounter"]));
         }
     }
 
     //Fill counter menu list with desired object list
-    private void FillMenu(MenuItem mi, object[] filler)
+    private void FillMenu(MenuItem MenuItem, object[] Filler)
     {
-        mi.MenuItems.Clear();
+        MenuItem.MenuItems.Clear();
 
-        switch (filler)
+        //Filler determines type of items to be put in the menu
+        switch (Filler)
         {
+            //Counter category items
             case PerformanceCounterCategory[] pcc:
                 foreach (PerformanceCounterCategory cat in pcc)
-                    mi.MenuItems.Add(new MenuItem(cat.CategoryName, MenuCheckMark)
+                    MenuItem.MenuItems.Add(new MenuItem(cat.CategoryName, MenuCheckMark)
                     {
                         Name = cat.CategoryName,
                         RadioCheck = true,
@@ -265,10 +268,11 @@ public partial class Counter
                         Tag = cat
                     });
                 break;
-
+            
+            //Counter instance - this one has no special type
             case string[] s:
                 foreach (string inst in s)
-                    mi.MenuItems.Add(new MenuItem(inst, MenuCheckMark)
+                    MenuItem.MenuItems.Add(new MenuItem(inst, MenuCheckMark)
                     {
                         Name = inst,
                         RadioCheck = true,
@@ -277,9 +281,10 @@ public partial class Counter
                     });
                 break;
 
+            //Counter name
             case PerformanceCounter[] pc:
                 foreach (PerformanceCounter cnt in pc)
-                    mi.MenuItems.Add(new MenuItem(cnt.CounterName, MenuCheckMark)
+                    MenuItem.MenuItems.Add(new MenuItem(cnt.CounterName, MenuCheckMark)
                     {
                         Name = cnt.CounterName,
                         RadioCheck = true,
@@ -293,7 +298,7 @@ public partial class Counter
         }
     }
 
-    //Get selected item name
+    //Get selected menu item name
     private string MenuItemName(MenuItem MenuItem)
     {
         foreach (MenuItem mi in MenuItem.MenuItems)
@@ -311,98 +316,98 @@ public partial class Counter
         return -1;
     }
 
-    //Disable icon perodically to make it blink
+    //Timer event controlling tray icon blinking
     private void TimerIcon_Tick(object s, EventArgs e)
     {
-        DrawTrayIcon(led.ledOFF, false);
+        DrawTrayIcon(LED.ColorOff, false);
     }
 
-    //Process timer readout - tested with precentage values only
+    //Timer event for counter readout
     private void TimerCnt_Tick(object s, EventArgs e)
     {
         //Read latest value and get the average reading
         try
         {
             //Shift values left, make room for new readout
-            for (int i = 0; i < val.Length - 1; i++)
-                val[i] = val[i + 1];
-            val[val.Length - 1] = (int)PC.NextValue();
+            for (int i = 0; i < Value.Length - 1; i++)
+                Value[i] = Value[i + 1];
+            Value[Value.Length - 1] = (int)PC.NextValue();
 
+            //Calculate average value
             int sum = 0;
-            for (int i = 0; i < val.Length; i++)
-                sum += val[i];
-
-            avg = sum / val.Length;
+            for (int i = 0; i < Value.Length; i++)
+                sum += Value[i];
+            Average = sum / Value.Length;
 
             //Now do some scaling - disk load is usually below 50% so pump it up a bit
-            if (avg <= 2) avg *= 10;
-            else if (avg <= 5) avg *= 7;
-            else if (avg <= 10) avg *= 4;
-            else if (avg <= 25) avg *= 2;
-            else if (avg <= 50) avg = (int)(avg * 1.5);
-            else if (avg <= 75) avg = (int)(avg * 1.25);
-            else if (avg <= 100) avg *= 1;
-            else if (avg > 100) avg = 100; //just in case if for some reason calc goes out of bounds (eg. dummy readout out of scale?)
+            if (Average <= 2) Average *= 10;
+            else if (Average <= 5) Average *= 7;
+            else if (Average <= 10) Average *= 4;
+            else if (Average <= 25) Average *= 2;
+            else if (Average <= 50) Average = (int)(Average * 1.5);
+            else if (Average <= 75) Average = (int)(Average * 1.25);
+            else if (Average <= 100) Average *= 1;
+            else if (Average > 100) Average = 100; //just in case if for some reason calc goes out of bounds (eg. dummy readout out of scale?)
 
             DrawTrayIcon(Color.FromArgb(
-                led.ledON.R * avg / 100,
-                led.ledON.G * avg / 100,
-                led.ledON.B * avg / 100
+                LED.ColorOn.R * Average / 100,
+                LED.ColorOn.G * Average / 100,
+                LED.ColorOn.B * Average / 100
                 ), true);
 
-            TrayIcon.Text = name + Environment.NewLine + "Value = " + avg.ToString();
+            TrayIcon.Text = Name + Environment.NewLine + "Value = " + Average.ToString();
         }
         catch (Exception ex)
         {
-            TimerCnt.Enabled = false;
+            TimerPoll.Enabled = false;
             MessageBox.Show("Well, that's embarassing but something went wrong with counter readout" +
                 Environment.NewLine + ex.Message +
-                Environment.NewLine + avg +
-                Environment.NewLine + val[0] +
-                Environment.NewLine + val[1] +
-                Environment.NewLine + val[2] +
-                Environment.NewLine + val[3] +
-                Environment.NewLine + val[4],
+                Environment.NewLine + Average +
+                Environment.NewLine + Value[0] +
+                Environment.NewLine + Value[1] +
+                Environment.NewLine + Value[2] +
+                Environment.NewLine + Value[3] +
+                Environment.NewLine + Value[4],
                 "Bye bye...");
             Application.Exit();
         }
     }
 
-    //Draw tray icon like LED light
-    private void DrawTrayIcon(Color c, bool t)
+    //Draw tray icon light
+    private void DrawTrayIcon(Color Color, bool BlinkerEnabled)
     {
-        brush = new SolidBrush(c);
-        DestroyIcon(h); //destroy current icon to avoid handle leaking
+        Brush = new SolidBrush(Color);
+        DestroyIcon(BitmapHandle); //destroy current icon to avoid handle leaking
 
         //Draw desired led shape
-        gfx.Clear(DiskLed.background);
-        switch (led.shape)
+        GFX.Clear(DiskLed.Background);
+        switch (LED.Shape)
         {
-            case DiskLed.shapes.Circle:
-                gfx.FillEllipse(brush, DiskLed.boundsCircle);
+            case DiskLed.Shapes.Circle:
+                GFX.FillEllipse(Brush, DiskLed.Bounds.BoundsCircle);
                 break;
-            case DiskLed.shapes.Rectangle:
-                gfx.FillRectangle(brush, DiskLed.boundsRectangle);
+            case DiskLed.Shapes.Rectangle:
+                GFX.FillRectangle(Brush, DiskLed.Bounds.BoundsRectangle);
                 break;
-            case DiskLed.shapes.BarVertical:
-                gfx.FillRectangle(brush, DiskLed.boundsBarVertical);
+            case DiskLed.Shapes.BarVertical:
+                GFX.FillRectangle(Brush, DiskLed.Bounds.BoundsBarVertical);
                 break;
-            case DiskLed.shapes.BarHorizontal:
-                gfx.FillRectangle(brush, DiskLed.boundsBarHorizontal);
+            case DiskLed.Shapes.BarHorizontal:
+                GFX.FillRectangle(Brush, DiskLed.Bounds.BoundsBarHorizontal);
                 break;
-            case DiskLed.shapes.Triangle:
-                gfx.FillPolygon(brush, DiskLed.boundsTriangle);
+            case DiskLed.Shapes.Triangle:
+                GFX.FillPolygon(Brush, DiskLed.Bounds.BoundsTriangle);
                 break;
             default:
                 break;
         }
 
         //Send drawn image to tray icon
-        h = bmp.GetHicon();
-        TrayIcon.Icon = Icon.FromHandle(h);
+        BitmapHandle = Bitmap.GetHicon();
+        TrayIcon.Icon = Icon.FromHandle(BitmapHandle);
 
-        //Enable or disable tray icon timer
-        TimerIcon.Enabled = t;
+        //Enable or disable blinker timer
+        TimerIcon.Enabled = BlinkerEnabled;
     }
 
     //Add counter
@@ -437,7 +442,7 @@ public partial class Counter
         COUNTERS.ini.DeleteKey("ledShape" + (COUNTERS.counters.Count + 1).ToString());
     }
 
-    //Handle menu exit
+    //Exit click
     private void MenuExit(object s, EventArgs e)
     {
         foreach (Counter c in COUNTERS.counters)
@@ -446,7 +451,7 @@ public partial class Counter
     }
 }
 
-//Dispose it properly
+//Object disposal
 public partial class Counter : IDisposable
 {
     bool disposed;
@@ -456,7 +461,7 @@ public partial class Counter : IDisposable
     {
         if (!disposed)
         {
-            TimerCnt.Enabled = false;
+            TimerPoll.Enabled = false;
             TimerIcon.Enabled = false;
             TrayIcon.Dispose();
             disposed = true;
