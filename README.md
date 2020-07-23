@@ -2,12 +2,12 @@
 Windows performance counters doodle
 
 Ideas for future releases
-* DONE - add new type of icon - vertical bar, horizontal bar (both static, just another shape)
-* add new option for rectangular leds - variable size to show counter value
-* OR even more - each led to have variable size, depending on shape - length for bars, radius for circle
-* variable circle could be filled or not
-* led brightness according to value or simple 0/1 blink
-* blink on/off for variable rectangle
+* TODO add new option for rectangular leds - variable size to show counter value
+* TODO even more - each led to have variable size, depending on shape - length for bars, radius for circle
+* TODO variable circle could be filled or not
+* TODO led brightness according to value or simple 0/1 blink
+* TODO blink on/off for variable rectangle
+* DONE! add new type of icon - vertical bar, horizontal bar (both static, just another shape)
 * DONE! make it possible to add/remove multiple counters, each with it's icon
 * DONE! hence, change of program design and logic - add new level of astraction - "counter" object
 * DONE! each counter object would have it's own menu (just like current tray menu), with "remove option" plus LED object as usual
