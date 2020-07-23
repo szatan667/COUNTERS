@@ -22,6 +22,7 @@ public partial class Counter
     private readonly Graphics gfx;
     private readonly DiskLed led;
     private SolidBrush brush;
+    private string name;
 
     //SYSTEM COUNTER
     private PerformanceCounter PC;
@@ -54,7 +55,7 @@ public partial class Counter
         //Create tray icon with context menu consisting of counter categories, types, etc.
         TrayIcon = new NotifyIcon()
         {
-            Text = "Blink",
+            Text = "Blink!",
             Visible = true,
             Icon = null,
             ContextMenu = new ContextMenu(new MenuItem[]
@@ -211,6 +212,8 @@ public partial class Counter
                 try
                 {
                     PC = pc;
+                    name = PC.CategoryName + "\\" + PC.InstanceName + "\\" + PC.CounterName;
+                    TrayIcon.Text = name;
                 }
                 catch (Exception ex)
                 {
@@ -346,6 +349,8 @@ public partial class Counter
                 led.ledON.G * avg / 100,
                 led.ledON.B * avg / 100
                 ), true);
+
+            TrayIcon.Text = name + Environment.NewLine + "Value = " + avg.ToString();
         }
         catch (Exception ex)
         {
