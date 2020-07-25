@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -83,7 +84,7 @@ public partial class Counter
                     new MenuItem("-") {Name = "Separator"},
                     new MenuItem("Duplicate counter", MenuDuplicateCounter) {Tag = Number},
                     new MenuItem("Add counter", MenuAddCounter),
-                    new MenuItem("Remove counter", MenuRemoveCounter) {Name = "MenuRemove", Enabled = (Number == 1) ? false : true},
+                    new MenuItem("Remove counter", MenuRemoveCounter) {Name = "MenuRemove", Enabled = false},
 
                     //Exit app
                     new MenuItem("-") {Name = "Separator"},
@@ -190,6 +191,7 @@ public partial class Counter
                 TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems.Clear();
                 TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems.Clear();
                 FillMenu(TrayIcon.ContextMenu.MenuItems["MenuInstance"], pcc.GetInstanceNames());
+                TrayIcon.Text = pcc.CategoryName;
                 break;
 
             //Instance click - clean counters submenu and fill it with fresh list
@@ -267,7 +269,9 @@ public partial class Counter
             
             //Counter instance - this one has no special type
             case string[] s:
-                foreach (string inst in s)
+                List<string> sl = new List<string>(s);
+                sl.Sort();
+                foreach (string inst in sl)
                     MenuItem.MenuItems.Add(new MenuItem(inst, MenuCheckMark)
                     {
                         Name = inst,
@@ -275,6 +279,7 @@ public partial class Counter
                         Checked = false,
                         Tag = inst
                     });
+                sl.Clear();
                 break;
 
             //Counter name
