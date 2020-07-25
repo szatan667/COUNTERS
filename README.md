@@ -6,7 +6,7 @@ Ideas for future releases
 * TODO even more - each led to have variable size, depending on shape - length for bars, radius for circle
 * TODO variable circle could be filled or not
 * TODO led brightness according to value or simple 0/1 blink
-* TODO blink on/off for all shapes
+* DONE! blink on/off for all shapes
 * DONE! add new type of icon - vertical bar, horizontal bar (both static, just another shape)
 * DONE! make it possible to add/remove multiple counters, each with it's icon
 * DONE! hence, change of program design and logic - add new level of astraction - "counter" object
