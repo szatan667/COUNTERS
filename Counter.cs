@@ -415,7 +415,7 @@ public partial class Counter
             CategoryName = PC.CategoryName,
             InstanceName = PC.InstanceName,
             CounterName = PC.CounterName,
-            Shape = LED.Shape.ToString(),
+            Shape = ((int)LED.Shape).ToString(),
             ColorR = LED.ColorOn.R.ToString(),
             ColorG = LED.ColorOn.G.ToString(),
             ColorB = LED.ColorOn.B.ToString()
