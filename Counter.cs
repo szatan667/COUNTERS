@@ -69,6 +69,7 @@ public partial class Counter
 
                     //Settings
                     new MenuItem("-") {Name = "Separator"},
+                    new MenuItem("Blink", MenuBlink) {Name = "MenuBlink", Checked = true},
                     new MenuItem("Color...", MenuCheckMark) {Tag = new ColorDialog()},
                     new MenuItem("Shape", new MenuItem[]
                     {
@@ -98,7 +99,7 @@ public partial class Counter
             Interval = 50,
             Enabled = false,
         };
-        TimerPoll.Tick += TimerCnt_Tick;
+        TimerPoll.Tick += TimerPoll_Tick;
 
         //Icon blink timer
         TimerIcon = new Timer
@@ -129,6 +130,7 @@ public partial class Counter
 
         //Create LED object and get the color from ini file
         LED = new DiskLed(GFX);
+        LED.Blink = true;
 
         if (Settings.ColorR != string.Empty && Settings.ColorG != string.Empty && Settings.ColorB != string.Empty &&
             Settings.ColorR != null && Settings.ColorG != null && Settings.ColorB != null)
@@ -153,6 +155,13 @@ public partial class Counter
 
         //Finally, start with led off
         DrawTrayIcon(LED.ColorOff, false);
+    }
+
+    //Toggle blinking mode
+    private void MenuBlink(object MenuItem, EventArgs e)
+    {
+        (MenuItem as MenuItem).Checked = !(MenuItem as MenuItem).Checked;
+        LED.Blink = !LED.Blink;
     }
 
     //Set menu item check mark and execute action according to item TAG type
@@ -324,7 +333,7 @@ public partial class Counter
     }
 
     //Timer event for counter readout
-    private void TimerCnt_Tick(object s, EventArgs e)
+    private void TimerPoll_Tick(object s, EventArgs e)
     {
         //Read latest value and get the average reading
         try
@@ -354,7 +363,7 @@ public partial class Counter
                 LED.ColorOn.R * Average / 100,
                 LED.ColorOn.G * Average / 100,
                 LED.ColorOn.B * Average / 100
-                ), true);
+                ), LED.Blink);
 
             TrayIcon.Text = Name + Environment.NewLine + "Value = " + Average.ToString();
         }

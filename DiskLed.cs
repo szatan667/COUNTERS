@@ -8,6 +8,7 @@ public class DiskLed
     public Color ColorOff = Color.Black;
     public Color ColorOn;
     public Shapes Shape;
+    public bool Blink;
 
     //Drawing bounds for different shapes
     public struct Bounds
