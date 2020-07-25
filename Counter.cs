@@ -357,7 +357,7 @@ public partial class Counter
             else if (Average <= 50) Average = (int)(Average * 1.5);
             else if (Average <= 75) Average = (int)(Average * 1.25);
             else if (Average <= 100) Average *= 1;
-            else if (Average > 100) Average = 100; //just in case if for some reason calc goes out of bounds (eg. dummy readout out of scale?)
+            else if (Average > 100) Average = 100; //just in case for some reason calc goes out of bounds (eg. dummy readout out of scale?)
 
             DrawTrayIcon(Color.FromArgb(
                 LED.ColorOn.R * Average / 100,
