@@ -82,7 +82,7 @@ public partial class Counter
                     //Add/remove counter
                     new MenuItem("-") {Name = "Separator"},
                     new MenuItem("Add counter", MenuAddCounter) { Tag = 1 },
-                    new MenuItem("Remove counter", MenuRemoveCounter) {Name = "MenuRemove", Tag = 1 },
+                    new MenuItem("Remove counter", MenuRemoveCounter) {Name = "MenuRemove", Tag = 1, Enabled = (Number == 1) ? false : true },
 
                     //Exit app
                     new MenuItem("-") {Name = "Separator"},
