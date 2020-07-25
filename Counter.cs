@@ -81,17 +81,13 @@ public partial class Counter
 
                     //Add/remove counter
                     new MenuItem("-") {Name = "Separator"},
-                    new MenuItem("Add counter", MenuAddCounter) { Tag = 1 },
-                    new MenuItem("Remove counter", MenuRemoveCounter) {Name = "MenuRemove", Tag = 1, Enabled = (Number == 1) ? false : true },
+                    new MenuItem("Duplicate counter", MenuDuplicateCounter) {Tag = Number},
+                    new MenuItem("Add counter", MenuAddCounter),
+                    new MenuItem("Remove counter", MenuRemoveCounter) {Name = "MenuRemove", Enabled = (Number == 1) ? false : true},
 
                     //Exit app
                     new MenuItem("-") {Name = "Separator"},
-                    new MenuItem("Exit", MenuExit)
-                    {
-                        DefaultItem = true,
-                        Name = "MenuExit",
-                        Tag = new Font("Anonymous Pro", 16, FontStyle.Bold)
-                    }
+                    new MenuItem("Exit", MenuExit) {DefaultItem = true, Name = "MenuExit"}
             })
         };
 
@@ -408,6 +404,28 @@ public partial class Counter
 
         //Enable or disable blinker timer
         TimerIcon.Enabled = BlinkerEnabled;
+    }
+
+    //Duplicate counter
+    private void MenuDuplicateCounter(object MenuItem, EventArgs e)
+    {
+        COUNTERS.counters.Add(new Counter(new Counter.CounterSettings
+        {
+            Number = COUNTERS.counters.Count + 1,
+            CategoryName = PC.CategoryName,
+            InstanceName = PC.InstanceName,
+            CounterName = PC.CounterName,
+            Shape = LED.Shape.ToString(),
+            ColorR = LED.ColorOn.R.ToString(),
+            ColorG = LED.ColorOn.G.ToString(),
+            ColorB = LED.ColorOn.B.ToString()
+        }));
+
+        if (COUNTERS.counters.Count > 1)
+            foreach (Counter c in COUNTERS.counters)
+                c.TrayIcon.ContextMenu.MenuItems["MenuRemove"].Enabled = true;
+
+        COUNTERS.ini.Write("numberOfCounters", COUNTERS.counters.Count.ToString());
     }
 
     //Add counter
