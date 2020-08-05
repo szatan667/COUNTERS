@@ -153,11 +153,16 @@ public partial class Counter
             int.TryParse(Settings.Blinker, out int b);
             MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuBlinker"].MenuItems[b], null);
         }
+        else
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuBlinker"].MenuItems[(int)DiskLed.Blinker.On], null);
+
         if (Settings.BlinkerType != string.Empty && Settings.BlinkerType != null)
         {
             int.TryParse(Settings.BlinkerType, out int bt);
             MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuBlinkerType"].MenuItems[bt], null);
         }
+        else
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuBlinkerType"].MenuItems[(int)DiskLed.BlinkerType.Value], null);
 
         //Color
         if (Settings.ColorR != string.Empty && Settings.ColorG != string.Empty && Settings.ColorB != string.Empty &&
@@ -494,7 +499,9 @@ public partial class Counter
             Shape = ((int)LED.Shape).ToString(),
             ColorR = LED.ColorOn.R.ToString(),
             ColorG = LED.ColorOn.G.ToString(),
-            ColorB = LED.ColorOn.B.ToString()
+            ColorB = LED.ColorOn.B.ToString(),
+            Blinker = LED.Blink.ToString(),
+            BlinkerType = LED.BlinkType.ToString()
         }));
 
         if (COUNTERS.counters.Count > 1)
