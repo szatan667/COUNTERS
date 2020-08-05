@@ -46,6 +46,8 @@ public partial class Counter
         public string ColorG;
         public string ColorB;
         public string Shape;
+        public string Blinker;
+        public string BlinkerType;
     }
 
     //Create counter object with default constructor
@@ -69,7 +71,21 @@ public partial class Counter
 
                     //Settings
                     new MenuItem("-") {Name = "Separator"},
-                    new MenuItem("Blink", MenuBlink) {Name = "MenuBlink", Checked = true},
+
+                    new MenuItem("Blink", new MenuItem[]
+                    {
+                        new MenuItem("ON", MenuCheckMark) {Name = DiskLed.Blinker.On.ToString(), Tag = DiskLed.Blinker.On},
+                        new MenuItem("OFF", MenuCheckMark) {Name = DiskLed.Blinker.Off.ToString(), Tag = DiskLed.Blinker.Off}
+                    }
+                    ) {Name = "MenuBlinker" },
+
+                    new MenuItem("Blink type", new MenuItem[]
+                    {
+                        new MenuItem("Value blink", MenuCheckMark) {Name = DiskLed.BlinkerType.Value.ToString(), Tag = DiskLed.BlinkerType.Value},
+                        new MenuItem("On/off blink", MenuCheckMark) {Name = DiskLed.BlinkerType.OnOff.ToString(), Tag = DiskLed.BlinkerType.OnOff}
+                    }
+                    ) {Name = "MenuBlinkerType" },
+
                     new MenuItem("Color...", MenuCheckMark) {Tag = new ColorDialog()},
                     new MenuItem("Shape", new MenuItem[]
                     {
@@ -128,10 +144,22 @@ public partial class Counter
         GFX = Graphics.FromImage(Bitmap);
         GFX.SmoothingMode = SmoothingMode.HighQuality;
 
-        //Create LED object and get the color from ini file
+        //Create LED object and get its settings from ini file
         LED = new DiskLed(GFX);
-        LED.Blink = true;
 
+        //Blinker
+        if (Settings.Blinker != string.Empty && Settings.Blinker != null)
+        {
+            int.TryParse(Settings.Blinker, out int b);
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuBlinker"].MenuItems[b], null);
+        }
+        if (Settings.BlinkerType != string.Empty && Settings.BlinkerType != null)
+        {
+            int.TryParse(Settings.BlinkerType, out int bt);
+            MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuBlinkerType"].MenuItems[bt], null);
+        }
+
+        //Color
         if (Settings.ColorR != string.Empty && Settings.ColorG != string.Empty && Settings.ColorB != string.Empty &&
             Settings.ColorR != null && Settings.ColorG != null && Settings.ColorB != null)
         {
@@ -139,12 +167,12 @@ public partial class Counter
             int.TryParse(Settings.ColorR, out int r);
             int.TryParse(Settings.ColorG, out int g);
             int.TryParse(Settings.ColorB, out int b);
-            LED.SetLedColor(Color.FromArgb(r, g, b));
+            LED.ColorOn = Color.FromArgb(r, g, b);
         }
         else
-            LED.SetLedColor(Color.Lime);
+            LED.ColorOn = Color.Lime;
 
-        //Now for led shape
+        //Shape
         if (Settings.Shape != string.Empty && Settings.Shape != null)
         {
             int.TryParse(Settings.Shape, out int s);
@@ -153,16 +181,16 @@ public partial class Counter
         else
             MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuShape"].MenuItems[((int)DiskLed.Shapes.Circle).ToString()], null);
 
-        //Finally, start with led off
-        DrawTrayIcon(LED.ColorOff, false);
+        //Finally, draw LED with light off
+        DrawTrayIcon(LED.ColorOff, DiskLed.Blinker.Off);
     }
 
     //Toggle blinking mode
-    private void MenuBlink(object MenuItem, EventArgs e)
-    {
-        (MenuItem as MenuItem).Checked = !(MenuItem as MenuItem).Checked;
-        LED.Blink = !LED.Blink;
-    }
+    //private void MenuBlink(object MenuItem, EventArgs e)
+    //{
+    //    (MenuItem as MenuItem).Checked = !(MenuItem as MenuItem).Checked;
+    //    LED.Blink = !LED.Blink;
+    //}
 
     //Set menu item check mark and execute action according to item TAG type
     private void MenuCheckMark(object MenuItem, EventArgs e)
@@ -177,9 +205,10 @@ public partial class Counter
             case ColorDialog cd:
                 placecheckmark = false;
                 cd.SolidColorOnly = true;
+                cd.Color = LED.ColorOn;
                 if (cd.ShowDialog() == DialogResult.OK)
                 {
-                    LED.SetLedColor(cd.Color);
+                    LED.ColorOn = cd.Color;
                     COUNTERS.ini.Write("ledColorR" + Number, LED.ColorOn.R.ToString());
                     COUNTERS.ini.Write("ledColorG" + Number, LED.ColorOn.G.ToString());
                     COUNTERS.ini.Write("ledColorB" + Number, LED.ColorOn.B.ToString());
@@ -189,8 +218,20 @@ public partial class Counter
             //Shape click
             case DiskLed.Shapes sh:
                 LED.Shape = sh;
-                DrawTrayIcon(LED.ColorOff, false);
+                DrawTrayIcon(LED.ColorOff, DiskLed.Blinker.Off);
                 COUNTERS.ini.Write("ledShape" + Number, ((int)LED.Shape).ToString());
+                break;
+
+            //Blinker click
+            case DiskLed.Blinker b:
+                LED.Blink = b;
+                COUNTERS.ini.Write("ledBlinker" + Number, ((int)LED.Blink).ToString());
+                break;
+
+            //Blinker type click
+            case DiskLed.BlinkerType bt:
+                LED.BlinkType = bt;
+                COUNTERS.ini.Write("ledBlinkerType" + Number, ((int)LED.BlinkType).ToString());
                 break;
 
             //Category click - clean instances&counters submenus and get list of instances
@@ -329,7 +370,7 @@ public partial class Counter
     //Timer event controlling tray icon blinking
     private void TimerIcon_Tick(object s, EventArgs e)
     {
-        DrawTrayIcon(LED.ColorOff, false);
+        DrawTrayIcon(LED.ColorOff, DiskLed.Blinker.Off);
     }
 
     //Timer event for counter readout
@@ -338,34 +379,45 @@ public partial class Counter
         //Read latest value and get the average reading
         try
         {
-            //Shift values left, make room for new readout
-            for (int i = 0; i < Value.Length - 1; i++)
-                Value[i] = Value[i + 1];
-            Value[Value.Length - 1] = (int)PC.NextValue();
+            switch (LED.BlinkType)
+            {
+                case DiskLed.BlinkerType.Value:
+                    //Shift values left, make room for new readout
+                    for (int i = 0; i < Value.Length - 1; i++)
+                        Value[i] = Value[i + 1];
+                    Value[Value.Length - 1] = (int)PC.NextValue();
 
-            //Calculate average value
-            int sum = 0;
-            for (int i = 0; i < Value.Length; i++)
-                sum += Value[i];
-            Average = sum / Value.Length;
+                    //Calculate average value
+                    int sum = 0;
+                    for (int i = 0; i < Value.Length; i++)
+                        sum += Value[i];
+                    Average = sum / Value.Length;
 
-            //Now do some scaling - disk load is usually below 50% so pump it up a bit
-            if (Average <= 2) Average *= 10;
-            else if (Average <= 5) Average *= 7;
-            else if (Average <= 10) Average *= 4;
-            else if (Average <= 25) Average *= 2;
-            else if (Average <= 50) Average = (int)(Average * 1.5);
-            else if (Average <= 75) Average = (int)(Average * 1.25);
-            else if (Average <= 100) Average *= 1;
-            else if (Average > 100) Average = 100; //just in case for some reason calc goes out of bounds (eg. dummy readout out of scale?)
+                    //Now do some scaling - disk load is usually below 50% so pump it up a bit
+                    if (Average <= 2) Average *= 10;
+                    else if (Average <= 5) Average *= 7;
+                    else if (Average <= 10) Average *= 4;
+                    else if (Average <= 25) Average *= 2;
+                    else if (Average <= 50) Average = (int)(Average * 1.5);
+                    else if (Average <= 75) Average = (int)(Average * 1.25);
+                    else if (Average <= 100) Average *= 1;
+                    else if (Average > 100) Average = 100; //just in case for some reason calc goes out of bounds (eg. dummy readout out of scale?)
 
-            DrawTrayIcon(Color.FromArgb(
-                LED.ColorOn.R * Average / 100,
-                LED.ColorOn.G * Average / 100,
-                LED.ColorOn.B * Average / 100
-                ), LED.Blink);
+                    DrawTrayIcon(Color.FromArgb(
+                        LED.ColorOn.R * Average / 100,
+                        LED.ColorOn.G * Average / 100,
+                        LED.ColorOn.B * Average / 100
+                        ), LED.Blink);
 
-            TrayIcon.Text = Name + Environment.NewLine + "Value = " + Average.ToString();
+                    TrayIcon.Text = Name + Environment.NewLine + "Value = " + Average.ToString();
+                    break;
+                case DiskLed.BlinkerType.OnOff:
+                    if (PC.NextValue() > 0)
+                        DrawTrayIcon(LED.ColorOn, LED.Blink);
+                    break;
+                default:
+                    throw new Exception("Counter blinker type invalid :(" + Environment.NewLine + LED.BlinkType);
+            }
         }
         catch (Exception ex)
         {
@@ -384,7 +436,7 @@ public partial class Counter
     }
 
     //Draw tray icon light
-    private void DrawTrayIcon(Color Color, bool BlinkerEnabled)
+    private void DrawTrayIcon(Color Color, DiskLed.Blinker BlinkerEnabled)
     {
         Brush = new SolidBrush(Color);
         DestroyIcon(BitmapHandle); //destroy current icon to avoid handle leaking
@@ -417,7 +469,17 @@ public partial class Counter
         TrayIcon.Icon = Icon.FromHandle(BitmapHandle);
 
         //Enable or disable blinker timer
-        TimerIcon.Enabled = BlinkerEnabled;
+        switch (BlinkerEnabled)
+        {
+            case DiskLed.Blinker.On:
+                TimerIcon.Enabled = true;
+                break;
+            case DiskLed.Blinker.Off:
+                TimerIcon.Enabled = false;
+                break;
+            default:
+                throw new Exception("Counter blinker state invalid :(" + Environment.NewLine + LED.Blink);
+        }
     }
 
     //Duplicate counter

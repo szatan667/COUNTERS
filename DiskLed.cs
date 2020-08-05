@@ -6,9 +6,10 @@ public class DiskLed
     //Default colors and drawing position
     public static readonly Color Background = Color.FromArgb(0, 0, 0, 0); //clear background
     public Color ColorOff = Color.Black;
-    public Color ColorOn;
-    public Shapes Shape;
-    public bool Blink;
+    public Color ColorOn { get; set; }
+    public Shapes Shape { get; set; }
+    public Blinker Blink {get; set;}
+    public BlinkerType BlinkType { get; set; }
 
     //Drawing bounds for different shapes
     public struct Bounds
@@ -28,6 +29,20 @@ public class DiskLed
         BarVertical,
         BarHorizontal,
         Triangle
+    }
+
+    //Blink state
+    public enum Blinker
+    {
+        On,
+        Off
+    }
+
+    //Blink type
+    public enum BlinkerType
+    {
+        Value,
+        OnOff
     }
 
     public DiskLed(Graphics gfx)
@@ -51,10 +66,5 @@ public class DiskLed
             new Point(0 , (int)gfx.VisibleClipBounds.Height - 1),
             new Point((int)gfx.VisibleClipBounds.Width - 1, (int)gfx.VisibleClipBounds.Height - 1)
         };
-    }
-
-    public void SetLedColor(Color Color)
-    {
-        ColorOn = Color;
     }
 }
