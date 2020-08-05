@@ -14,7 +14,7 @@ public partial class Counter
     private extern static bool DestroyIcon(IntPtr handle);
 
     //Counter number, taken from caller
-    private int Number;
+    private readonly int Number;
 
     //Each counter has tray icon, logical icon, actual system counter and set of timers
     //TRAY ICON
