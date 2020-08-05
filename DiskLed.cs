@@ -6,10 +6,10 @@ public class DiskLed
     //Default colors and drawing position
     public static readonly Color Background = Color.FromArgb(0, 0, 0, 0); //clear background
     public Color ColorOff = Color.Black;
-    public Color ColorOn { get; set; }
-    public Shapes Shape { get; set; }
-    public Blinker Blink {get; set;}
-    public BlinkerType BlinkType { get; set; }
+    public Color ColorOn;
+    public Shapes Shape;
+    public Blinker Blink;
+    public BlinkerType BlinkType;
 
     //Drawing bounds for different shapes
     public struct Bounds

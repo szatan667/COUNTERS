@@ -18,6 +18,7 @@ public partial class Counter
 
     //Each counter has tray icon, logical icon, actual system counter and set of timers
     //TRAY ICON
+    //TODO - drawing objects could be encapsulated in LED object?
     public readonly NotifyIcon TrayIcon;
     private readonly Bitmap Bitmap;
     private IntPtr BitmapHandle;
@@ -28,8 +29,6 @@ public partial class Counter
 
     //SYSTEM COUNTER
     private PerformanceCounter PC;
-    private readonly int[] Value = new int[5];
-    private int Average;
 
     //TIMERS
     private readonly Timer TimerPoll;
@@ -187,17 +186,10 @@ public partial class Counter
             MenuCheckMark(TrayIcon.ContextMenu.MenuItems["MenuShape"].MenuItems[((int)DiskLed.Shapes.Circle).ToString()], null);
 
         //Finally, draw LED with light off
-        DrawTrayIcon(LED.ColorOff, DiskLed.Blinker.Off);
+        DrawTrayIcon(LED.ColorOff);
     }
 
-    //Toggle blinking mode
-    //private void MenuBlink(object MenuItem, EventArgs e)
-    //{
-    //    (MenuItem as MenuItem).Checked = !(MenuItem as MenuItem).Checked;
-    //    LED.Blink = !LED.Blink;
-    //}
-
-    //Set menu item check mark and execute action according to item TAG type
+    //Set menu item check mark and execute action according to sender's TAG type
     private void MenuCheckMark(object MenuItem, EventArgs e)
     {
         //Place checkmark as default but some items dont need that
@@ -223,13 +215,24 @@ public partial class Counter
             //Shape click
             case DiskLed.Shapes sh:
                 LED.Shape = sh;
-                DrawTrayIcon(LED.ColorOff, DiskLed.Blinker.Off);
+                DrawTrayIcon(LED.ColorOff);
                 COUNTERS.ini.Write("ledShape" + Number, ((int)LED.Shape).ToString());
                 break;
 
             //Blinker click
             case DiskLed.Blinker b:
                 LED.Blink = b;
+                switch (b)
+                {
+                    case DiskLed.Blinker.On:
+                        TimerIcon.Enabled = true;
+                        break;
+                    case DiskLed.Blinker.Off:
+                        TimerIcon.Enabled = false;
+                        break;
+                    default:
+                        throw new Exception("Counter blinker state invalid :(" + Environment.NewLine + LED.Blink);
+                }
                 COUNTERS.ini.Write("ledBlinker" + Number, ((int)LED.Blink).ToString());
                 break;
 
@@ -245,7 +248,8 @@ public partial class Counter
                 if (PC != null) PC.Dispose();
                 TrayIcon.ContextMenu.MenuItems["MenuInstance"].MenuItems.Clear();
                 TrayIcon.ContextMenu.MenuItems["MenuCounter"].MenuItems.Clear();
-                FillMenu(TrayIcon.ContextMenu.MenuItems["MenuInstance"], pcc.GetInstanceNames());
+                FillMenu(TrayIcon.ContextMenu.MenuItems["MenuInstance"], //destination submenu
+                    pcc.GetInstanceNames()); //filler objects - instance names
                 TrayIcon.Text = pcc.CategoryName;
                 break;
 
@@ -262,12 +266,12 @@ public partial class Counter
 
             //Counter click - create actual counter
             case PerformanceCounter pc:
-                TimerPoll.Enabled = true;
                 try
                 {
                     PC = pc;
                     Name = PC.CategoryName + "\\" + PC.InstanceName + "\\" + PC.CounterName;
                     TrayIcon.Text = Name;
+                    TimerPoll.Enabled = true;
                 }
                 catch (Exception ex)
                 {
@@ -322,7 +326,7 @@ public partial class Counter
                     });
                 break;
             
-            //Counter instance - this one has no special type
+            //Counter instance - this one has no special type, it is ordinary string
             case string[] s:
                 List<string> sl = new List<string>(s);
                 sl.Sort();
@@ -372,10 +376,10 @@ public partial class Counter
         return -1;
     }
 
-    //Timer event controlling tray icon blinking
+    //Icon blink timer - draw "off" light to make it blink
     private void TimerIcon_Tick(object s, EventArgs e)
     {
-        DrawTrayIcon(LED.ColorOff, DiskLed.Blinker.Off);
+        DrawTrayIcon(LED.ColorOff);
     }
 
     //Timer event for counter readout
@@ -386,7 +390,11 @@ public partial class Counter
         {
             switch (LED.BlinkType)
             {
+                //Value-based blinker
                 case DiskLed.BlinkerType.Value:
+                    int[] Value = new int[5];
+                    int Average;
+
                     //Shift values left, make room for new readout
                     for (int i = 0; i < Value.Length - 1; i++)
                         Value[i] = Value[i + 1];
@@ -412,13 +420,15 @@ public partial class Counter
                         LED.ColorOn.R * Average / 100,
                         LED.ColorOn.G * Average / 100,
                         LED.ColorOn.B * Average / 100
-                        ), LED.Blink);
+                        ));
 
                     TrayIcon.Text = Name + Environment.NewLine + "Value = " + Average.ToString();
                     break;
+
+                //On-off blinker
                 case DiskLed.BlinkerType.OnOff:
                     if (PC.NextValue() > 0)
-                        DrawTrayIcon(LED.ColorOn, LED.Blink);
+                        DrawTrayIcon(LED.ColorOn);
                     break;
                 default:
                     throw new Exception("Counter blinker type invalid :(" + Environment.NewLine + LED.BlinkType);
@@ -428,20 +438,14 @@ public partial class Counter
         {
             TimerPoll.Enabled = false;
             MessageBox.Show("Well, that's embarassing but something went wrong with counter readout" +
-                Environment.NewLine + ex.Message +
-                Environment.NewLine + Average +
-                Environment.NewLine + Value[0] +
-                Environment.NewLine + Value[1] +
-                Environment.NewLine + Value[2] +
-                Environment.NewLine + Value[3] +
-                Environment.NewLine + Value[4],
+                Environment.NewLine + ex.Message,
                 "Bye bye...");
             Application.Exit();
         }
     }
 
     //Draw tray icon light
-    private void DrawTrayIcon(Color Color, DiskLed.Blinker BlinkerEnabled)
+    private void DrawTrayIcon(Color Color)
     {
         Brush = new SolidBrush(Color);
         DestroyIcon(BitmapHandle); //destroy current icon to avoid handle leaking
@@ -472,24 +476,12 @@ public partial class Counter
         //Send drawn image to tray icon
         BitmapHandle = Bitmap.GetHicon();
         TrayIcon.Icon = Icon.FromHandle(BitmapHandle);
-
-        //Enable or disable blinker timer
-        switch (BlinkerEnabled)
-        {
-            case DiskLed.Blinker.On:
-                TimerIcon.Enabled = true;
-                break;
-            case DiskLed.Blinker.Off:
-                TimerIcon.Enabled = false;
-                break;
-            default:
-                throw new Exception("Counter blinker state invalid :(" + Environment.NewLine + LED.Blink);
-        }
     }
 
     //Duplicate counter
     private void MenuDuplicateCounter(object MenuItem, EventArgs e)
     {
+        //TODO - this is nasty..... should be possible to take counter settings straight from counter.Settings or similar
         COUNTERS.counters.Add(new Counter(new Counter.CounterSettings
         {
             Number = COUNTERS.counters.Count + 1,
