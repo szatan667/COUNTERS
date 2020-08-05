@@ -5,7 +5,7 @@ Ideas for future releases
 * TODO add new option for rectangular leds - variable size to show counter value
 * TODO even more - each led to have variable size, depending on shape - length for bars, radius for circle
 * TODO variable circle could be filled or not
-* TODO led brightness according to value or simple 0/1 blink
+* DONE! led brightness according to value or simple 0/1 blink
 * DONE! blink on/off for all shapes
 * DONE! add new type of icon - vertical bar, horizontal bar (both static, just another shape)
 * DONE! make it possible to add/remove multiple counters, each with it's icon
