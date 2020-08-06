@@ -32,7 +32,7 @@ public partial class Counter
 
     //TIMERS
     private readonly Timer TimerPoll;
-    private readonly Timer TimerIcon;
+    private readonly Timer TimerBlink;
 
     //Settings struct, used by constructor
     public struct CounterSettings
@@ -117,15 +117,15 @@ public partial class Counter
             Enabled = false,
         };
 
-        TimerIcon = new Timer
+        TimerBlink = new Timer
         {
-            Interval = TimerPoll.Interval / 2, //blink twice as fast as readout goes
+            Enabled = false
         };
 
         TimerPoll.Tick += TimerPoll_Tick;
-        TimerIcon.Tick += TimerIcon_Tick;
+        TimerBlink.Tick += TimerBlink_Tick;
         TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].TextChanged += RefreshRate_TextChanged;
-        TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text = "250";
+        TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text = "50";
 
         //Fill in list of performance categories available (eg. processor, disk, network, etc.)
         FillMenu(TrayIcon.ContextMenuStrip.Items["MenuCategory"], PerformanceCounterCategory.GetCategories());
@@ -195,7 +195,7 @@ public partial class Counter
     private void RefreshRate_TextChanged(object sender, EventArgs e)
     {
         TimerPoll.Interval = int.TryParse(TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text, out int i) ? ((i > 2) ? i : 50) : 50;
-        TimerIcon.Interval = TimerPoll.Interval / 2;
+        TimerBlink.Interval = TimerPoll.Interval / 2;
     }
 
     //Set menu item check mark and execute action according to sender's TAG type
@@ -373,10 +373,10 @@ public partial class Counter
     }
 
     //Icon blink timer - draw "off" light to make it blink
-    private void TimerIcon_Tick(object s, EventArgs e)
+    private void TimerBlink_Tick(object s, EventArgs e)
     {
         DrawTrayIcon(LED.ColorOff);
-        TimerIcon.Enabled = false;
+        TimerBlink.Enabled = false;
     }
 
     //Timer event for counter readout
@@ -478,10 +478,10 @@ public partial class Counter
         switch (LED.Blink)
         {
             case DiskLed.Blinker.On:
-                TimerIcon.Enabled = true;
+                TimerBlink.Enabled = true;
                 break;
             case DiskLed.Blinker.Off:
-                TimerIcon.Enabled = false;
+                TimerBlink.Enabled = false;
                 break;
             default:
                 throw new Exception("Counter blinker state invalid :(" + Environment.NewLine + LED.Blink);
@@ -568,7 +568,7 @@ public partial class Counter : IDisposable
         if (!disposed)
         {
             TimerPoll.Enabled = false;
-            TimerIcon.Enabled = false;
+            TimerBlink.Enabled = false;
             TrayIcon.Dispose();
             disposed = true;
             GC.SuppressFinalize(this);
