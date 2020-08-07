@@ -44,7 +44,8 @@ public class COUNTERS : ApplicationContext
                     ColorB = ini.Read("ledColorB" + ix),
                     Shape = ini.Read("ledShape" + ix),
                     Blinker = ini.Read("ledBlinker" + ix),
-                    BlinkerType = ini.Read("ledBlinkerType" + ix)
+                    BlinkerType = ini.Read("ledBlinkerType" + ix),
+                    RefreshRate = ini.Read("refreshRate" + ix)
                 }));
     }
 }

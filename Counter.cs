@@ -47,6 +47,7 @@ public partial class Counter
         public string Shape;
         public string Blinker;
         public string BlinkerType;
+        public string RefreshRate;
     }
 
     //Create counter object with default constructor
@@ -125,7 +126,10 @@ public partial class Counter
         TimerPoll.Tick += TimerPoll_Tick;
         TimerBlink.Tick += TimerBlink_Tick;
         TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].TextChanged += RefreshRate_TextChanged;
-        TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text = "50";
+        if (Settings.RefreshRate != null)
+            TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text = Settings.RefreshRate;
+        else
+            TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text = "50";
 
         //Fill in list of performance categories available (eg. processor, disk, network, etc.)
         FillMenu(TrayIcon.ContextMenuStrip.Items["MenuCategory"], PerformanceCounterCategory.GetCategories());
@@ -196,6 +200,7 @@ public partial class Counter
     {
         TimerPoll.Interval = int.TryParse(TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text, out int i) ? ((i > 2) ? i : 50) : 50;
         TimerBlink.Interval = TimerPoll.Interval / 2;
+        COUNTERS.ini.Write("refreshRate" + Number, ((ToolStripTextBox)sender).Text);
     }
 
     //Set menu item check mark and execute action according to sender's TAG type
@@ -237,6 +242,7 @@ public partial class Counter
             //Blinker type click
             case DiskLed.BlinkerType bt:
                 LED.BlinkType = bt;
+                TrayIcon.Text = (Name != null && Name != string.Empty) ? Name : TrayIcon.Text;
                 COUNTERS.ini.Write("ledBlinkerType" + Number, ((int)LED.BlinkType).ToString());
                 break;
 
@@ -260,6 +266,7 @@ public partial class Counter
                          PerformanceCounterCategory.GetCategories()[MenuItemIndex(
                              MenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCategory"]),
                              TrayIcon.ContextMenuStrip.Items["MenuCategory"])].GetCounters(inst));
+                TrayIcon.Text += "\\" + inst;
                 break;
 
             //Counter click - create actual counter
@@ -503,8 +510,9 @@ public partial class Counter
             ColorR = LED.ColorOn.R.ToString(),
             ColorG = LED.ColorOn.G.ToString(),
             ColorB = LED.ColorOn.B.ToString(),
-            Blinker = LED.Blink.ToString(),
-            BlinkerType = LED.BlinkType.ToString()
+            Blinker = ((int)LED.Blink).ToString(),
+            BlinkerType = ((int)LED.BlinkType).ToString(),
+            RefreshRate = TimerPoll.Interval.ToString()
         }));
 
         if (COUNTERS.counters.Count > 1)
@@ -546,6 +554,7 @@ public partial class Counter
         COUNTERS.ini.DeleteKey("ledShape" + (COUNTERS.counters.Count + 1).ToString());
         COUNTERS.ini.DeleteKey("ledBlinker" + (COUNTERS.counters.Count + 1).ToString());
         COUNTERS.ini.DeleteKey("ledBlinkerType" + (COUNTERS.counters.Count + 1).ToString());
+        COUNTERS.ini.DeleteKey("refreshRate" + (COUNTERS.counters.Count + 1).ToString());
     }
 
     //Exit click
