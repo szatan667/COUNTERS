@@ -126,7 +126,7 @@ public partial class Counter
         TimerPoll.Tick += TimerPoll_Tick;
         TimerBlink.Tick += TimerBlink_Tick;
         TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].TextChanged += RefreshRate_TextChanged;
-        if (Settings.RefreshRate != null)
+        if (Settings.RefreshRate != null && Settings.RefreshRate != string.Empty)
             TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text = Settings.RefreshRate;
         else
             TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text = "50";
