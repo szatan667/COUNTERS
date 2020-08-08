@@ -111,6 +111,7 @@ public partial class Counter
             new ToolStripSeparator() {Name = "Separator"},
             new ToolStripMenuItem("Exit", null, MenuExit) {Name = "MenuExit"}
         });
+        TrayIcon.ContextMenuStrip.Items["MenuExit"].Font = new Font(TrayIcon.ContextMenuStrip.Items["MenuExit"].Font, FontStyle.Bold);
 
         //Polling and blinking timers
         TimerPoll = new Timer
@@ -298,7 +299,7 @@ public partial class Counter
         {
             //Go through menu items at the same level (all from sender's parent)
             //Don't look for currently checked item - just clear them all first...
-            foreach (var mi in (MenuItem as ToolStripMenuItem).Owner.Items)
+            foreach (object mi in (MenuItem as ToolStripMenuItem).Owner.Items)
                 (mi as ToolStripMenuItem).Checked = false;
 
             //...and then mark desired as checked
@@ -314,7 +315,7 @@ public partial class Counter
     //Fill counter menu list with desired object list
     private void FillMenu(ToolStripItem MenuItem, object[] Filler)
     {
-        var mi = MenuItem as ToolStripMenuItem;
+        ToolStripMenuItem mi = MenuItem as ToolStripMenuItem;
         mi.DropDownItems.Clear();
 
         //Filler determines type of items to be put in the menu

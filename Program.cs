@@ -47,5 +47,11 @@ public class COUNTERS : ApplicationContext
                     BlinkerType = ini.Read("ledBlinkerType" + ix),
                     RefreshRate = ini.Read("refreshRate" + ix)
                 }));
+
+        //'Remove' option is disabled by default. Enable if number of counters grows
+        if (counters.Count > 1)
+            foreach (Counter c in counters)
+                c.TrayIcon.ContextMenuStrip.Items["MenuRemove"].Enabled = true;
+
     }
 }
