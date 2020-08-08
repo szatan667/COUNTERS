@@ -67,7 +67,11 @@ public partial class Counter
         //Create context menu
         TrayIcon.ContextMenuStrip.Items.AddRange(new ToolStripItem[]
         {
+            //Information label - full counter path
+            new ToolStripLabel("Pick your counter...") {Name = "MenuCounterName", Enabled = false},
+
             //Counter consists of category, instance and counter name
+            new ToolStripSeparator() {Name = "Separator"},
             new ToolStripMenuItem {Text = "CATEGORY", Name = "MenuCategory"},
             new ToolStripMenuItem {Text = "INSTANCE", Name = "MenuInstance"},
             new ToolStripMenuItem {Text = "COUNTER", Name = "MenuCounter"},
@@ -254,6 +258,7 @@ public partial class Counter
                 FillMenu(TrayIcon.ContextMenuStrip.Items["MenuInstance"], //destination submenu
                     pcc.GetInstanceNames()); //filler objects - instance names
                 TrayIcon.Text = pcc.CategoryName;
+                TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = TrayIcon.Text;
                 break;
 
             //Instance click - clean counter names submenu and fill it with fresh list
@@ -266,6 +271,7 @@ public partial class Counter
                              TrayIcon.ContextMenuStrip.Items["MenuCategory"],
                              SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCategory"]))].GetCounters(inst));
                 TrayIcon.Text += "\\" + inst;
+                TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = TrayIcon.Text;
                 break;
 
             //Counter name click - create actual counter
@@ -275,6 +281,7 @@ public partial class Counter
                     PC = pc;
                     Name = PC.CategoryName + "\\" + PC.InstanceName + "\\" + PC.CounterName;
                     TrayIcon.Text = Name;
+                    TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = TrayIcon.Text;
                     TimerPoll.Enabled = true;
                 }
                 catch (Exception ex)
