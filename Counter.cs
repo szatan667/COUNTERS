@@ -98,7 +98,7 @@ public partial class Counter
                 new ToolStripMenuItem("Triangle", null, MenuCheckMark) {Name = ((int)DiskLed.Shapes.Triangle).ToString(), Tag = DiskLed.Shapes.Triangle}
             }
             ) {Name = "MenuShape" },
-            new ToolStripMenuItem("Refresh rate [ms]:") {Enabled = false},
+            new ToolStripLabel("Refresh rate [ms]:") {Enabled = false},
             new ToolStripTextBox("MenuRefreshRate") {TextBoxTextAlign = HorizontalAlignment.Right},
 
             //Add/remove counter
