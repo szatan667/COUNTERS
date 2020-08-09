@@ -5,10 +5,7 @@ using System.Windows.Forms;
 public class COUNTERS : ApplicationContext
 {
     //Program entry point
-    static void Main()
-    {
-        Application.Run(new COUNTERS());
-    }
+    static void Main() => Application.Run(new COUNTERS());
 
     //List of counters
     public static List<Counter> counters;
@@ -52,6 +49,5 @@ public class COUNTERS : ApplicationContext
         if (counters.Count > 1)
             foreach (Counter c in counters)
                 c.TrayIcon.ContextMenuStrip.Items["MenuRemove"].Enabled = true;
-
     }
 }
