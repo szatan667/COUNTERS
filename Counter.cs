@@ -6,6 +6,22 @@ using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
+//Settings struct - this basically mirrors everything that is saved in INI file, useful for duplicating current counter
+public struct CounterSettings
+{
+    public int Number;
+    public string CategoryName;
+    public string InstanceName;
+    public string CounterName;
+    public string ColorR;
+    public string ColorG;
+    public string ColorB;
+    public string Shape;
+    public string Blinker;
+    public string BlinkerType;
+    public string RefreshRate;
+}
+
 //Counter object
 public partial class Counter
 {
@@ -30,22 +46,7 @@ public partial class Counter
     private readonly Timer TimerPoll;
     private readonly Timer TimerBlink;
 
-    //Settings struct - this basically mirrors everything that is saved in INI file, useful for duplicating current counter
-    public struct CounterSettings
-    {
-        public int Number;
-        public string CategoryName;
-        public string InstanceName;
-        public string CounterName;
-        public string ColorR;
-        public string ColorG;
-        public string ColorB;
-        public string Shape;
-        public string Blinker;
-        public string BlinkerType;
-        public string RefreshRate;
-    }
-
+    //Settings passed from outside world, usually read from INI file
     CounterSettings Settings;
 
     //Create counter object with desired settings
@@ -79,26 +80,26 @@ public partial class Counter
             new ToolStripSeparator() {Name = "Separator"},
             new ToolStripMenuItem("Blink", null, new ToolStripItem[]
             {
-                new ToolStripMenuItem("ON", null, MenuItemClick) {Name = DiskLed.Blinker.On.ToString(), Tag = DiskLed.Blinker.On},
-                new ToolStripMenuItem("OFF", null, MenuItemClick) {Name = DiskLed.Blinker.Off.ToString(), Tag = DiskLed.Blinker.Off}
+                new ToolStripMenuItem("ON", null, MenuItemClick) {Name = Blinker.On.ToString(), Tag = Blinker.On},
+                new ToolStripMenuItem("OFF", null, MenuItemClick) {Name = Blinker.Off.ToString(), Tag = Blinker.Off}
             }
             ) {Name = "MenuBlinker" },
 
             new ToolStripMenuItem("Blink type", null, new ToolStripItem[]
             {
-                new ToolStripMenuItem("Value blink", null, MenuItemClick) {Name = DiskLed.BlinkerType.Value.ToString(), Tag = DiskLed.BlinkerType.Value},
-                new ToolStripMenuItem("On/off blink", null, MenuItemClick) {Name = DiskLed.BlinkerType.OnOff.ToString(), Tag = DiskLed.BlinkerType.OnOff}
+                new ToolStripMenuItem("Value blink", null, MenuItemClick) {Name = BlinkerType.Value.ToString(), Tag = BlinkerType.Value},
+                new ToolStripMenuItem("On/off blink", null, MenuItemClick) {Name = BlinkerType.OnOff.ToString(), Tag = BlinkerType.OnOff}
             }
             ) {Name = "MenuBlinkerType" },
 
             new ToolStripMenuItem("Color...", null, MenuItemClick) {Tag = new ColorDialog()},
             new ToolStripMenuItem("Shape", null, new ToolStripItem[]
             {
-                new ToolStripMenuItem("Circle", null, MenuItemClick) {Name = ((int)DiskLed.Shapes.Circle).ToString(), Tag = DiskLed.Shapes.Circle},
-                new ToolStripMenuItem("Rectangle", null, MenuItemClick) {Name = ((int)DiskLed.Shapes.Rectangle).ToString(), Tag = DiskLed.Shapes.Rectangle},
-                new ToolStripMenuItem("Vertical bar", null, MenuItemClick) {Name = ((int)DiskLed.Shapes.BarVertical).ToString(), Tag = DiskLed.Shapes.BarVertical},
-                new ToolStripMenuItem("Horizontal bar", null, MenuItemClick) {Name = ((int)DiskLed.Shapes.BarHorizontal).ToString(), Tag = DiskLed.Shapes.BarHorizontal},
-                new ToolStripMenuItem("Triangle", null, MenuItemClick) {Name = ((int)DiskLed.Shapes.Triangle).ToString(), Tag = DiskLed.Shapes.Triangle}
+                new ToolStripMenuItem("Circle", null, MenuItemClick) {Name = ((int)LedShape.Circle).ToString(), Tag = LedShape.Circle},
+                new ToolStripMenuItem("Rectangle", null, MenuItemClick) {Name = ((int)LedShape.Rectangle).ToString(), Tag = LedShape.Rectangle},
+                new ToolStripMenuItem("Vertical bar", null, MenuItemClick) {Name = ((int)LedShape.BarVertical).ToString(), Tag = LedShape.BarVertical},
+                new ToolStripMenuItem("Horizontal bar", null, MenuItemClick) {Name = ((int)LedShape.BarHorizontal).ToString(), Tag = LedShape.BarHorizontal},
+                new ToolStripMenuItem("Triangle", null, MenuItemClick) {Name = ((int)LedShape.Triangle).ToString(), Tag = LedShape.Triangle}
             }
             ) {Name = "MenuShape" },
             new ToolStripLabel("Refresh rate [ms]:") {Enabled = false},
@@ -156,7 +157,7 @@ public partial class Counter
             MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuBlinker"] as ToolStripMenuItem).DropDownItems[b], null);
         }
         else
-            MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuBlinker"] as ToolStripMenuItem).DropDownItems[(int)DiskLed.Blinker.On], null);
+            MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuBlinker"] as ToolStripMenuItem).DropDownItems[(int)Blinker.On], null);
 
         //BLINKER TYPE
         if (CounterSettings.BlinkerType != string.Empty && CounterSettings.BlinkerType != null)
@@ -165,7 +166,7 @@ public partial class Counter
             MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuBlinkerType"] as ToolStripMenuItem).DropDownItems[bt], null);
         }
         else
-            MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuBlinkerType"] as ToolStripMenuItem).DropDownItems[(int)DiskLed.BlinkerType.Value], null);
+            MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuBlinkerType"] as ToolStripMenuItem).DropDownItems[(int)BlinkerType.Value], null);
 
         //LED COLOR
         if (CounterSettings.ColorR != string.Empty && CounterSettings.ColorG != string.Empty && CounterSettings.ColorB != string.Empty &&
@@ -187,7 +188,7 @@ public partial class Counter
             MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuShape"] as ToolStripMenuItem).DropDownItems[s], null);
         }
         else
-            MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuShape"] as ToolStripMenuItem).DropDownItems[((int)DiskLed.Shapes.Circle).ToString()], null);
+            MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuShape"] as ToolStripMenuItem).DropDownItems[((int)LedShape.Circle).ToString()], null);
 
         //Finally, draw LED with light off
         DrawTrayIcon(LED.ColorOff);
@@ -229,20 +230,20 @@ public partial class Counter
                 break;
 
             //Shape click
-            case DiskLed.Shapes sh:
+            case LedShape sh:
                 LED.Shape = sh;
                 DrawTrayIcon(LED.ColorOff);
                 COUNTERS.ini.Write("ledShape" + Settings.Number, ((int)LED.Shape).ToString());
                 break;
 
             //Blinker click
-            case DiskLed.Blinker b:
+            case Blinker b:
                 LED.Blink = b;
                 COUNTERS.ini.Write("ledBlinker" + Settings.Number, ((int)LED.Blink).ToString());
                 break;
 
             //Blinker type click
-            case DiskLed.BlinkerType bt:
+            case BlinkerType bt:
                 LED.BlinkType = bt;
                 TrayIcon.Text = (Name != null && Name != string.Empty) ? Name : TrayIcon.Text;
                 COUNTERS.ini.Write("ledBlinkerType" + Settings.Number, ((int)LED.BlinkType).ToString());
@@ -401,7 +402,7 @@ public partial class Counter
             switch (LED.BlinkType)
             {
                 //Value-based blinker - average over couple of readouts
-                case DiskLed.BlinkerType.Value:
+                case BlinkerType.Value:
                     int[] Value = new int[5];
                     int Average;
 
@@ -436,7 +437,7 @@ public partial class Counter
                     break;
 
                 //On-off blinker - blink if counter reports something else than zero
-                case DiskLed.BlinkerType.OnOff:
+                case BlinkerType.OnOff:
                     if (PC.NextValue() > 0)
                         DrawTrayIcon(LED.ColorOn);
                     break;
@@ -466,20 +467,20 @@ public partial class Counter
             GFX.Clear(DiskLed.Background);
             switch (LED.Shape)
             {
-                case DiskLed.Shapes.Circle:
-                    GFX.FillEllipse(b, DiskLed.Bounds.BoundsCircle);
+                case LedShape.Circle:
+                    GFX.FillEllipse(b, LedBounds.BoundsCircle);
                     break;
-                case DiskLed.Shapes.Rectangle:
-                    GFX.FillRectangle(b, DiskLed.Bounds.BoundsRectangle);
+                case LedShape.Rectangle:
+                    GFX.FillRectangle(b, LedBounds.BoundsRectangle);
                     break;
-                case DiskLed.Shapes.BarVertical:
-                    GFX.FillRectangle(b, DiskLed.Bounds.BoundsBarVertical);
+                case LedShape.BarVertical:
+                    GFX.FillRectangle(b, LedBounds.BoundsBarVertical);
                     break;
-                case DiskLed.Shapes.BarHorizontal:
-                    GFX.FillRectangle(b, DiskLed.Bounds.BoundsBarHorizontal);
+                case LedShape.BarHorizontal:
+                    GFX.FillRectangle(b, LedBounds.BoundsBarHorizontal);
                     break;
-                case DiskLed.Shapes.Triangle:
-                    GFX.FillPolygon(b, DiskLed.Bounds.BoundsTriangle);
+                case LedShape.Triangle:
+                    GFX.FillPolygon(b, LedBounds.BoundsTriangle);
                     break;
                 default:
                     break;
@@ -492,10 +493,10 @@ public partial class Counter
             //To blink or not to blink
             switch (LED.Blink)
             {
-                case DiskLed.Blinker.On:
+                case Blinker.On:
                     TimerBlink.Enabled = true;
                     break;
-                case DiskLed.Blinker.Off:
+                case Blinker.Off:
                     TimerBlink.Enabled = false;
                     break;
                 default:
@@ -519,7 +520,7 @@ public partial class Counter
     //Add new counter
     private void MenuAddCounter(object s, EventArgs e)
     {
-        COUNTERS.counters.Add(new Counter(new Counter.CounterSettings { Number = COUNTERS.counters.Count + 1 }));
+        COUNTERS.counters.Add(new Counter(new CounterSettings { Number = COUNTERS.counters.Count + 1 }));
 
         if (COUNTERS.counters.Count > 1)
             foreach (Counter c in COUNTERS.counters)

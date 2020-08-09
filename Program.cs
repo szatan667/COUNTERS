@@ -24,12 +24,12 @@ public class COUNTERS : ApplicationContext
         int.TryParse(ini.Read("numberOfCounters"), out int noOfCounters);
         if (noOfCounters < 1)
         {
-            counters.Add(new Counter(new Counter.CounterSettings { Number = 1 }));
+            counters.Add(new Counter(new CounterSettings { Number = 1 }));
             ini.Write("numberOfCounters", "1");
         }
         else
             for (int ix = 1; ix <= noOfCounters; ix++)
-                counters.Add(new Counter(new Counter.CounterSettings
+                counters.Add(new Counter(new CounterSettings
                 {
                     //Get counter settings from INI file
                     Number = ix,
