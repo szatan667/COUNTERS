@@ -508,7 +508,21 @@ public partial class Counter
     //Duplicate existing counter
     private void MenuDuplicateCounter(object MenuItem, EventArgs e)
     {
-        COUNTERS.counters.Add(new Counter(Settings));
+        COUNTERS.counters.Add(new Counter(new CounterSettings
+        {
+            //Get counter settings from INI file
+            Number = COUNTERS.counters.Count + 1,
+            CategoryName = COUNTERS.ini.Read("categoryName" + Settings.Number),
+            InstanceName = COUNTERS.ini.Read("instanceName" + Settings.Number),
+            CounterName = COUNTERS.ini.Read("counterName" + Settings.Number),
+            ColorR = COUNTERS.ini.Read("ledColorR" + Settings.Number),
+            ColorG = COUNTERS.ini.Read("ledColorG" + Settings.Number),
+            ColorB = COUNTERS.ini.Read("ledColorB" + Settings.Number),
+            Shape = COUNTERS.ini.Read("ledShape" + Settings.Number),
+            Blinker = COUNTERS.ini.Read("ledBlinker" + Settings.Number),
+            BlinkerType = COUNTERS.ini.Read("ledBlinkerType" + Settings.Number),
+            RefreshRate = COUNTERS.ini.Read("refreshRate" + Settings.Number)
+        }));
 
         if (COUNTERS.counters.Count > 1)
             foreach (Counter c in COUNTERS.counters)
