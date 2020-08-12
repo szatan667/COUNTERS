@@ -180,6 +180,9 @@ public partial class Counter
         }
         else
             LED.ColorOn = Color.Lime;
+        COUNTERS.ini.Write("ledColorR" + Settings.Number, LED.ColorOn.R.ToString());
+        COUNTERS.ini.Write("ledColorG" + Settings.Number, LED.ColorOn.G.ToString());
+        COUNTERS.ini.Write("ledColorB" + Settings.Number, LED.ColorOn.B.ToString());
 
         //LED SHAPE
         if (CounterSettings.Shape != string.Empty && CounterSettings.Shape != null)
