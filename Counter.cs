@@ -268,6 +268,9 @@ public partial class Counter
         //Place checkmark as default but some items dont need that
         bool placecheckmark = true;
 
+        //Temporary counter name string
+        string cnt_name = TrayIcon.Text;
+
         //Execute click action according to sender's tag type
         //Tag value stores actual value which menu item represents (see menu definition)
         //Each time settings item is clicked, selected value is saved to ini file
@@ -314,6 +317,8 @@ public partial class Counter
                 (TrayIcon.ContextMenuStrip.Items["MenuCounter"] as ToolStripMenuItem).DropDownItems.Clear();
                 FillMenu(TrayIcon.ContextMenuStrip.Items["MenuInstance"], //destination submenu
                     pcc.GetInstanceNames()); //filler objects - instance names
+                cnt_name = "(" + Settings.Number + ") " + pcc.CategoryName;
+
                 break;
 
             //Instance click - clean counter names submenu and fill it with fresh list
@@ -325,6 +330,7 @@ public partial class Counter
                          PerformanceCounterCategory.GetCategories()[SelectedMenuItemIndex(
                              TrayIcon.ContextMenuStrip.Items["MenuCategory"],
                              SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCategory"]))].GetCounters(inst));
+                cnt_name += "\\" + inst;
                 break;
 
             //Counter name click - create actual counter
@@ -333,6 +339,7 @@ public partial class Counter
                 {
                     PC = pc;
                     TimerPoll.Enabled = true;
+                    cnt_name = "(" + Settings.Number + ") " + PC.CategoryName + "\\" + PC.InstanceName + "\\" + PC.CounterName;
                 }
                 catch (Exception ex)
                 {
@@ -365,13 +372,9 @@ public partial class Counter
             Settings.CategoryName = SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCategory"]);
             Settings.InstanceName = SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuInstance"]);
             Settings.CounterName = SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCounter"]);
-            if (PC != null)
-            {
-                TrayIcon.Text = "(" + Settings.Number + ") " + PC.CategoryName + "\\" + PC.InstanceName + "\\" + PC.CounterName;
-                TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = TrayIcon.Text;
-            }
-
         }
+        TrayIcon.Text = cnt_name.Substring(0, (cnt_name.Length > 63) ? 63 : cnt_name.Length);
+        TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = cnt_name;
     }
 
     //Fill counter submenus with desired list
