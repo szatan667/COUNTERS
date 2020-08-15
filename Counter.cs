@@ -93,7 +93,6 @@ public partial class Counter
     private IntPtr BitmapHandle;
     private readonly Graphics GFX;
     private readonly DiskLed LED;
-    private string Name;
 
     //SYSTEM COUNTER
     private PerformanceCounter PC;
@@ -315,8 +314,6 @@ public partial class Counter
                 (TrayIcon.ContextMenuStrip.Items["MenuCounter"] as ToolStripMenuItem).DropDownItems.Clear();
                 FillMenu(TrayIcon.ContextMenuStrip.Items["MenuInstance"], //destination submenu
                     pcc.GetInstanceNames()); //filler objects - instance names
-                TrayIcon.Text = "(" + Settings.Number + ") " + pcc.CategoryName;
-                TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = TrayIcon.Text;
                 break;
 
             //Instance click - clean counter names submenu and fill it with fresh list
@@ -328,8 +325,6 @@ public partial class Counter
                          PerformanceCounterCategory.GetCategories()[SelectedMenuItemIndex(
                              TrayIcon.ContextMenuStrip.Items["MenuCategory"],
                              SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCategory"]))].GetCounters(inst));
-                TrayIcon.Text += "\\" + inst;
-                TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = TrayIcon.Text;
                 break;
 
             //Counter name click - create actual counter
@@ -337,9 +332,6 @@ public partial class Counter
                 try
                 {
                     PC = pc;
-                    Name = PC.CategoryName + "\\" + PC.InstanceName + "\\" + PC.CounterName;
-                    TrayIcon.Text += "\\" + PC.CounterName;
-                    TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = TrayIcon.Text;
                     TimerPoll.Enabled = true;
                 }
                 catch (Exception ex)
@@ -373,6 +365,12 @@ public partial class Counter
             Settings.CategoryName = SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCategory"]);
             Settings.InstanceName = SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuInstance"]);
             Settings.CounterName = SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCounter"]);
+            if (PC != null)
+            {
+                TrayIcon.Text = "(" + Settings.Number + ") " + PC.CategoryName + "\\" + PC.InstanceName + "\\" + PC.CounterName;
+                TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = TrayIcon.Text;
+            }
+
         }
     }
 
