@@ -21,17 +21,16 @@ public class COUNTERS : ApplicationContext
 
         //Check if there are any counters saved in INI file
         //If not, create default one
-        int.TryParse(ini.Read("numberOfCounters"), out int noOfCounters);
-        if (noOfCounters < 1)
+        if (int.TryParse(ini.Read("numberOfCounters"), out int noOfCounters))
+            for (int ix = 1; ix <= noOfCounters; ix++)
+                CounterFromIni(ix);
+        else
         {
             Counters.Add(new Counter(new CounterSettings { Number = 1 }));
             ini.Write("numberOfCounters", "1");
         }
-        else
-            for (int ix = 1; ix <= noOfCounters; ix++)
-                CounterFromIni(ix);
 
-        //'Remove' option is disabled by default. Enable if number of counters grows
+        //'Remove' option is disabled by default.Enable if number of counters grows
         if (Counters.Count > 1)
             foreach (Counter c in Counters)
                 c.TrayIcon.ContextMenuStrip.Items["MenuRemove"].Enabled = true;
@@ -39,20 +38,23 @@ public class COUNTERS : ApplicationContext
 
     public static void CounterFromIni(int CounterNumber)
     {
-        Counters.Add(new Counter(new CounterSettings
+        //Get counter settings from INI file
+        string sn = "Counter" + (Counters.Count + 1);
+        CounterSettings cs = new CounterSettings()
         {
-            //Get counter settings from INI file
             Number = Counters.Count + 1,
-            CategoryName = ini.Read("categoryName" + CounterNumber),
-            InstanceName = ini.Read("instanceName" + CounterNumber),
-            CounterName = ini.Read("counterName" + CounterNumber),
-            ColorR = ini.Read("ledColorR" + CounterNumber),
-            ColorG = ini.Read("ledColorG" + CounterNumber),
-            ColorB = ini.Read("ledColorB" + CounterNumber),
-            Shape = ini.Read("ledShape" + CounterNumber),
-            Blinker = ini.Read("ledBlinker" + CounterNumber),
-            BlinkerType = ini.Read("ledBlinkerType" + CounterNumber),
-            RefreshRate = ini.Read("refreshRate" + CounterNumber)
-        }));
+            CategoryName = ini.Read(nameof(cs.CategoryName) + CounterNumber, sn),
+            InstanceName = ini.Read(nameof(cs.InstanceName) + CounterNumber, sn),
+            CounterName = ini.Read(nameof(cs.CounterName) + CounterNumber, sn),
+            ColorR = ini.Read(nameof(cs.ColorR) + CounterNumber, sn),
+            ColorG = ini.Read(nameof(cs.ColorG) + CounterNumber, sn),
+            ColorB = ini.Read(nameof(cs.ColorB) + CounterNumber, sn),
+            Shape = ini.Read(nameof(cs.Shape) + CounterNumber, sn),
+            Blinker = ini.Read(nameof(cs.Blinker) + CounterNumber, sn),
+            BlinkerType = ini.Read(nameof(cs.BlinkerType) + CounterNumber, sn),
+            RefreshRate = ini.Read(nameof(cs.RefreshRate) + CounterNumber, sn)
+        };
+
+        Counters.Add(new Counter(cs));
     }
 }

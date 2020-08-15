@@ -6,20 +6,76 @@ using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-//Settings struct - this basically mirrors everything that is saved in INI file, useful for duplicating current counter
+//Settings struct - use properties to store the value in runtime and save it to INI file
 public struct CounterSettings
 {
     public int Number;
-    public string CategoryName;
-    public string InstanceName;
-    public string CounterName;
-    public string ColorR;
-    public string ColorG;
-    public string ColorB;
-    public string Shape;
-    public string Blinker;
-    public string BlinkerType;
-    public string RefreshRate;
+    public string CategoryName
+    {
+        get { return categoryName ?? string.Empty; }
+        set { categoryName = value; SaveIni(nameof(CategoryName), value); }
+    }
+    public string InstanceName
+    {
+        get { return instanceName ?? string.Empty; }
+        set { instanceName = value; SaveIni(nameof(InstanceName), value); }
+    }
+    public string CounterName
+    {
+        get { return counterName ?? string.Empty; }
+        set { counterName = value; SaveIni(nameof(CounterName), value); }
+    }
+    public string ColorR
+    {
+        get { return colorR ?? string.Empty; }
+        set { colorR = value; SaveIni(nameof(ColorR), value); }
+    }
+    public string ColorG
+    {
+        get { return colorG ?? string.Empty; }
+        set { colorG = value; SaveIni(nameof(ColorG), value); }
+    }
+    public string ColorB
+    {
+        get { return colorB ?? string.Empty; }
+        set { colorB = value; SaveIni(nameof(ColorB), value); }
+    }
+    public string Shape
+    {
+        get { return shape ?? string.Empty; }
+        set { shape = value; SaveIni(nameof(Shape), value); }
+    }
+    public string Blinker
+    {
+        get { return blinker ?? string.Empty; }
+        set { blinker = value; SaveIni(nameof(Blinker), value); }
+    }
+    public string BlinkerType
+    {
+        get { return blinkerType ?? string.Empty; }
+        set { blinkerType = value; SaveIni(nameof(BlinkerType), value); }
+    }
+    public string RefreshRate
+    {
+        get { return refreshRate ?? string.Empty; }
+        set { refreshRate = value; SaveIni(nameof(refreshRate), value); }
+    }
+
+    private void SaveIni(string Setting, string Value)
+    {
+        COUNTERS.ini.Write(Setting + Number, Value, "Counter" + Number);
+    }
+
+    private string categoryName;
+    private string instanceName;
+    private string counterName;
+    private string colorR;
+    private string colorG;
+    private string colorB;
+    private string shape;
+    private string blinker;
+    private string blinkerType;
+    private string refreshRate;
 }
 
 //Counter object
@@ -47,7 +103,7 @@ public partial class Counter
     private readonly Timer TimerBlink;
 
     //Settings passed from outside world, usually read from INI file
-    CounterSettings Settings;
+    private CounterSettings Settings;
 
     //Create counter object with desired settings
     public Counter(CounterSettings CounterSettings)
@@ -58,7 +114,7 @@ public partial class Counter
         //Create tray icon with context menu strip; actual icon is null - it will be drawn in runtime
         TrayIcon = new NotifyIcon()
         {
-            Text = "Blink!",
+            Text = "(" + Settings.Number + ") " + "Blink!",
             Visible = true,
             Icon = null,
             ContextMenuStrip = new ContextMenuStrip()
@@ -68,7 +124,7 @@ public partial class Counter
         TrayIcon.ContextMenuStrip.Items.AddRange(new ToolStripItem[]
         {
             //Information label - full counter path
-            new ToolStripLabel("Pick your counter...") {Name = "MenuCounterName", Enabled = false},
+            new ToolStripLabel("(" + Settings.Number + ") " + "Pick your counter...") {Name = "MenuCounterName", Enabled = false},
 
             //Counter consists of category, instance and counter name
             new ToolStripSeparator() {Name = "Separator"},
@@ -180,9 +236,9 @@ public partial class Counter
         }
         else
             LED.ColorOn = Color.Lime;
-        COUNTERS.ini.Write("ledColorR" + Settings.Number, LED.ColorOn.R.ToString());
-        COUNTERS.ini.Write("ledColorG" + Settings.Number, LED.ColorOn.G.ToString());
-        COUNTERS.ini.Write("ledColorB" + Settings.Number, LED.ColorOn.B.ToString());
+        Settings.ColorR = LED.ColorOn.R.ToString();
+        Settings.ColorG = LED.ColorOn.G.ToString();
+        Settings.ColorB = LED.ColorOn.B.ToString();
 
         //LED SHAPE
         if (CounterSettings.Shape != string.Empty && CounterSettings.Shape != null)
@@ -204,7 +260,7 @@ public partial class Counter
         //In case input is not parseable, it is 50 ms by default
         TimerPoll.Interval = int.TryParse(TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text, out int i) ? ((i > 2) ? i : 50) : 50;
         TimerBlink.Interval = TimerPoll.Interval / 2;
-        COUNTERS.ini.Write("refreshRate" + Settings.Number, ((ToolStripTextBox)sender).Text);
+        Settings.RefreshRate = ((ToolStripTextBox)sender).Text;
     }
 
     //Generic menu click handler - execute action according to sender's TAG type
@@ -226,9 +282,9 @@ public partial class Counter
                 if (cd.ShowDialog() == DialogResult.OK)
                 {
                     LED.ColorOn = cd.Color;
-                    COUNTERS.ini.Write("ledColorR" + Settings.Number, LED.ColorOn.R.ToString());
-                    COUNTERS.ini.Write("ledColorG" + Settings.Number, LED.ColorOn.G.ToString());
-                    COUNTERS.ini.Write("ledColorB" + Settings.Number, LED.ColorOn.B.ToString());
+                    Settings.ColorR = LED.ColorOn.R.ToString();
+                    Settings.ColorG = LED.ColorOn.G.ToString();
+                    Settings.ColorB = LED.ColorOn.B.ToString();
                 }
                 break;
 
@@ -236,20 +292,19 @@ public partial class Counter
             case LedShape sh:
                 LED.Shape = sh;
                 DrawTrayIcon(LED.ColorOff);
-                COUNTERS.ini.Write("ledShape" + Settings.Number, ((int)LED.Shape).ToString());
+                Settings.Shape = ((int)LED.Shape).ToString();
                 break;
 
             //Blinker click
             case Blinker b:
                 LED.Blink = b;
-                COUNTERS.ini.Write("ledBlinker" + Settings.Number, ((int)LED.Blink).ToString());
+                Settings.Blinker = ((int)LED.Blink).ToString();
                 break;
 
             //Blinker type click
             case BlinkerType bt:
                 LED.BlinkType = bt;
-                TrayIcon.Text = (Name != null && Name != string.Empty) ? Name : TrayIcon.Text;
-                COUNTERS.ini.Write("ledBlinkerType" + Settings.Number, ((int)LED.BlinkType).ToString());
+                Settings.BlinkerType = ((int)LED.BlinkType).ToString();
                 break;
 
             //Category click - clean instances&counters submenus and get list of instances
@@ -260,7 +315,7 @@ public partial class Counter
                 (TrayIcon.ContextMenuStrip.Items["MenuCounter"] as ToolStripMenuItem).DropDownItems.Clear();
                 FillMenu(TrayIcon.ContextMenuStrip.Items["MenuInstance"], //destination submenu
                     pcc.GetInstanceNames()); //filler objects - instance names
-                TrayIcon.Text = pcc.CategoryName;
+                TrayIcon.Text = "(" + Settings.Number + ") " + pcc.CategoryName;
                 TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = TrayIcon.Text;
                 break;
 
@@ -283,7 +338,7 @@ public partial class Counter
                 {
                     PC = pc;
                     Name = PC.CategoryName + "\\" + PC.InstanceName + "\\" + PC.CounterName;
-                    TrayIcon.Text = Name;
+                    TrayIcon.Text += "\\" + PC.CounterName;
                     TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = TrayIcon.Text;
                     TimerPoll.Enabled = true;
                 }
@@ -315,9 +370,9 @@ public partial class Counter
             (MenuItem as ToolStripMenuItem).Checked = true;
 
             //Write changed counter settings to INI file
-            COUNTERS.ini.Write("categoryName" + Settings.Number, SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCategory"]));
-            COUNTERS.ini.Write("instanceName" + Settings.Number, SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuInstance"]));
-            COUNTERS.ini.Write("counterName" + Settings.Number, SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCounter"]));
+            Settings.CategoryName = SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCategory"]);
+            Settings.InstanceName = SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuInstance"]);
+            Settings.CounterName = SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCounter"]);
         }
     }
 
@@ -435,8 +490,6 @@ public partial class Counter
                         LED.ColorOn.G * Average / 100,
                         LED.ColorOn.B * Average / 100
                         ));
-
-                    TrayIcon.Text = Name + Environment.NewLine + "Value = " + Average.ToString();
                     break;
 
                 //On-off blinker - blink if counter reports something else than zero
@@ -511,7 +564,9 @@ public partial class Counter
     //Duplicate existing counter
     private void MenuDuplicateCounter(object MenuItem, EventArgs e)
     {
-        COUNTERS.CounterFromIni(Settings.Number);
+        CounterSettings cs = Settings;
+        cs.Number++;
+        COUNTERS.Counters.Add(new Counter(cs));
 
         if (COUNTERS.Counters.Count > 1)
             foreach (Counter c in COUNTERS.Counters)
@@ -543,16 +598,7 @@ public partial class Counter
                 c.TrayIcon.ContextMenuStrip.Items["MenuRemove"].Enabled = false;
 
         COUNTERS.ini.Write("numberOfCounters", COUNTERS.Counters.Count.ToString());
-        COUNTERS.ini.DeleteKey("categoryName" + (COUNTERS.Counters.Count + 1).ToString());
-        COUNTERS.ini.DeleteKey("instanceName" + (COUNTERS.Counters.Count + 1).ToString());
-        COUNTERS.ini.DeleteKey("counterName" + (COUNTERS.Counters.Count + 1).ToString());
-        COUNTERS.ini.DeleteKey("ledColorR" + (COUNTERS.Counters.Count + 1).ToString());
-        COUNTERS.ini.DeleteKey("ledColorG" + (COUNTERS.Counters.Count + 1).ToString());
-        COUNTERS.ini.DeleteKey("ledColorB" + (COUNTERS.Counters.Count + 1).ToString());
-        COUNTERS.ini.DeleteKey("ledShape" + (COUNTERS.Counters.Count + 1).ToString());
-        COUNTERS.ini.DeleteKey("ledBlinker" + (COUNTERS.Counters.Count + 1).ToString());
-        COUNTERS.ini.DeleteKey("ledBlinkerType" + (COUNTERS.Counters.Count + 1).ToString());
-        COUNTERS.ini.DeleteKey("refreshRate" + (COUNTERS.Counters.Count + 1).ToString());
+        COUNTERS.ini.DeleteSection("Counter" + Settings.Number);
     }
 
     //Exit click
