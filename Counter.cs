@@ -6,65 +6,62 @@ using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-//Settings struct - use properties to store the value in runtime and save it to INI file
+//Settings struct - use properties to store values and save them to INI file
 public struct CounterSettings
 {
     public int Number;
     public string CategoryName
     {
-        get { return categoryName ?? string.Empty; }
+        get => categoryName ?? string.Empty;
         set { categoryName = value; SaveIni(nameof(CategoryName), value); }
     }
     public string InstanceName
     {
-        get { return instanceName ?? string.Empty; }
+        get => instanceName ?? string.Empty;
         set { instanceName = value; SaveIni(nameof(InstanceName), value); }
     }
     public string CounterName
     {
-        get { return counterName ?? string.Empty; }
+        get => counterName ?? string.Empty;
         set { counterName = value; SaveIni(nameof(CounterName), value); }
     }
     public string ColorR
     {
-        get { return colorR ?? string.Empty; }
+        get => colorR ?? string.Empty;
         set { colorR = value; SaveIni(nameof(ColorR), value); }
     }
     public string ColorG
     {
-        get { return colorG ?? string.Empty; }
+        get => colorG ?? string.Empty;
         set { colorG = value; SaveIni(nameof(ColorG), value); }
     }
     public string ColorB
     {
-        get { return colorB ?? string.Empty; }
+        get => colorB ?? string.Empty;
         set { colorB = value; SaveIni(nameof(ColorB), value); }
     }
     public string Shape
     {
-        get { return shape ?? string.Empty; }
+        get => shape ?? string.Empty;
         set { shape = value; SaveIni(nameof(Shape), value); }
     }
     public string Blinker
     {
-        get { return blinker ?? string.Empty; }
+        get => blinker ?? string.Empty;
         set { blinker = value; SaveIni(nameof(Blinker), value); }
     }
     public string BlinkerType
     {
-        get { return blinkerType ?? string.Empty; }
+        get => blinkerType ?? string.Empty;
         set { blinkerType = value; SaveIni(nameof(BlinkerType), value); }
     }
     public string RefreshRate
     {
-        get { return refreshRate ?? string.Empty; }
-        set { refreshRate = value; SaveIni(nameof(refreshRate), value); }
+        get => refreshRate ?? string.Empty;
+        set { refreshRate = value; SaveIni(nameof(RefreshRate), value); }
     }
 
-    private void SaveIni(string Setting, string Value)
-    {
-        COUNTERS.ini.Write(Setting, Value, "Counter" + Number);
-    }
+    private void SaveIni(string Setting, string Value) => COUNTERS.ini.Write(Setting, Value, "Counter" + Number);
 
     private string categoryName;
     private string instanceName;
@@ -123,59 +120,59 @@ public partial class Counter
         TrayIcon.ContextMenuStrip.Items.AddRange(new ToolStripItem[]
         {
             //Information label - full counter path
-            new ToolStripLabel("(" + Settings.Number + ") " + "Pick your counter...") {Name = "MenuCounterName", Enabled = false},
+            new ToolStripLabel("(" + Settings.Number + ") " + "Pick your counter...") { Name = "MenuCounterName", Enabled = false },
 
             //Counter consists of category, instance and counter name
-            new ToolStripSeparator() {Name = "Separator"},
-            new ToolStripMenuItem {Text = "CATEGORY", Name = "MenuCategory"},
-            new ToolStripMenuItem {Text = "INSTANCE", Name = "MenuInstance"},
-            new ToolStripMenuItem {Text = "COUNTER", Name = "MenuCounter"},
+            new ToolStripSeparator() { Name = "Separator" },
+            new ToolStripMenuItem { Text = "CATEGORY", Name = "MenuCategory" },
+            new ToolStripMenuItem { Text = "INSTANCE", Name = "MenuInstance" },
+            new ToolStripMenuItem { Text = "COUNTER", Name = "MenuCounter" },
 
             //Settings section
-            new ToolStripSeparator() {Name = "Separator"},
+            new ToolStripSeparator() { Name = "Separator" },
             new ToolStripMenuItem("Blink", null, new ToolStripItem[]
             {
-                new ToolStripMenuItem("ON", null, MenuItemClick) {Name = Blinker.On.ToString(), Tag = Blinker.On},
-                new ToolStripMenuItem("OFF", null, MenuItemClick) {Name = Blinker.Off.ToString(), Tag = Blinker.Off}
+                new ToolStripMenuItem("ON", null, MenuItemClick) { Name = Blinker.On.ToString(), Tag = Blinker.On },
+                new ToolStripMenuItem("OFF", null, MenuItemClick) { Name = Blinker.Off.ToString(), Tag = Blinker.Off }
             }
-            ) {Name = "MenuBlinker" },
+            ) { Name = "MenuBlinker" },
 
             new ToolStripMenuItem("Blink type", null, new ToolStripItem[]
             {
-                new ToolStripMenuItem("Value blink", null, MenuItemClick) {Name = BlinkerType.Value.ToString(), Tag = BlinkerType.Value},
-                new ToolStripMenuItem("On/off blink", null, MenuItemClick) {Name = BlinkerType.OnOff.ToString(), Tag = BlinkerType.OnOff}
+                new ToolStripMenuItem("Value blink", null, MenuItemClick) { Name = BlinkerType.Value.ToString(), Tag = BlinkerType.Value },
+                new ToolStripMenuItem("On/off blink", null, MenuItemClick) { Name = BlinkerType.OnOff.ToString(), Tag = BlinkerType.OnOff }
             }
-            ) {Name = "MenuBlinkerType" },
+            ) { Name = "MenuBlinkerType" },
 
-            new ToolStripMenuItem("Color...", null, MenuItemClick) {Tag = new ColorDialog()},
+            new ToolStripMenuItem("Color...", null, MenuItemClick) { Tag = new ColorDialog() },
             new ToolStripMenuItem("Shape", null, new ToolStripItem[]
             {
-                new ToolStripMenuItem("Circle", null, MenuItemClick) {Name = ((int)LedShape.Circle).ToString(), Tag = LedShape.Circle},
-                new ToolStripMenuItem("Rectangle", null, MenuItemClick) {Name = ((int)LedShape.Rectangle).ToString(), Tag = LedShape.Rectangle},
-                new ToolStripMenuItem("Vertical bar", null, MenuItemClick) {Name = ((int)LedShape.BarVertical).ToString(), Tag = LedShape.BarVertical},
-                new ToolStripMenuItem("Horizontal bar", null, MenuItemClick) {Name = ((int)LedShape.BarHorizontal).ToString(), Tag = LedShape.BarHorizontal},
-                new ToolStripMenuItem("Triangle", null, MenuItemClick) {Name = ((int)LedShape.Triangle).ToString(), Tag = LedShape.Triangle}
+                new ToolStripMenuItem("Circle", null, MenuItemClick) { Name = ((int)LedShape.Circle).ToString(), Tag = LedShape.Circle },
+                new ToolStripMenuItem("Rectangle", null, MenuItemClick) { Name = ((int)LedShape.Rectangle).ToString(), Tag = LedShape.Rectangle },
+                new ToolStripMenuItem("Vertical bar", null, MenuItemClick) { Name = ((int)LedShape.BarVertical).ToString(), Tag = LedShape.BarVertical },
+                new ToolStripMenuItem("Horizontal bar", null, MenuItemClick) { Name = ((int)LedShape.BarHorizontal).ToString(), Tag = LedShape.BarHorizontal },
+                new ToolStripMenuItem("Triangle", null, MenuItemClick) { Name = ((int)LedShape.Triangle).ToString(), Tag = LedShape.Triangle }
             }
-            ) {Name = "MenuShape" },
-            new ToolStripLabel("Refresh rate [ms]:") {Enabled = false},
-            new ToolStripTextBox("MenuRefreshRate") {TextBoxTextAlign = HorizontalAlignment.Right},
+            ) { Name = "MenuShape" },
+            new ToolStripLabel("Refresh rate [ms]:") { Enabled = false },
+            new ToolStripTextBox("MenuRefreshRate") { TextBoxTextAlign = HorizontalAlignment.Right },
 
             //Add,remove or clone counter
-            new ToolStripSeparator() {Name = "Separator"},
-            new ToolStripMenuItem("Duplicate counter", null, MenuDuplicateCounter) {Tag = Settings.Number},
+            new ToolStripSeparator() { Name = "Separator" },
+            new ToolStripMenuItem("Duplicate counter", null, MenuDuplicateCounter) { Tag = Settings.Number },
             new ToolStripMenuItem("Add counter", null, MenuAddCounter),
-            new ToolStripMenuItem("Remove counter", null, MenuRemoveCounter) {Name = "MenuRemove", Enabled = false},
+            new ToolStripMenuItem("Remove counter", null, MenuRemoveCounter) { Name = "MenuRemove", Enabled = false },
 
             //Exit app
-            new ToolStripSeparator() {Name = "Separator"},
-            new ToolStripMenuItem("Exit", null, MenuExit) {Name = "MenuExit"}
+            new ToolStripSeparator() { Name = "Separator" },
+            new ToolStripMenuItem("Exit", null, MenuExit) { Name = "MenuExit" }
         });
         TrayIcon.ContextMenuStrip.Items["MenuExit"].Font = new Font(TrayIcon.ContextMenuStrip.Items["MenuExit"].Font, FontStyle.Bold);
         TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].TextChanged += RefreshRate_TextChanged;
 
         //Polling and blinking timers, disabled until actual counter is created
-        TimerPoll = new Timer {Enabled = false};
-        TimerBlink = new Timer {Enabled = false};
+        TimerPoll = new Timer { Enabled = false };
+        TimerBlink = new Timer { Enabled = false };
         TimerPoll.Tick += TimerPoll_Tick;
         TimerBlink.Tick += TimerBlink_Tick;
 
