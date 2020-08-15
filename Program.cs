@@ -39,7 +39,7 @@ public class COUNTERS : ApplicationContext
     public static void CounterFromIni(int CounterNumber)
     {
         //Get counter settings from INI file
-        string sn = "Counter" + (Counters.Count + 1);
+        string sn = "Counter" + CounterNumber;
         CounterSettings cs = new CounterSettings()
         {
             Number = Counters.Count + 1,
