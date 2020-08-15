@@ -63,7 +63,7 @@ public struct CounterSettings
 
     private void SaveIni(string Setting, string Value)
     {
-        COUNTERS.ini.Write(Setting + Number, Value, "Counter" + Number);
+        COUNTERS.ini.Write(Setting, Value, "Counter" + Number);
     }
 
     private string categoryName;

@@ -43,16 +43,16 @@ public class COUNTERS : ApplicationContext
         CounterSettings cs = new CounterSettings()
         {
             Number = Counters.Count + 1,
-            CategoryName = ini.Read(nameof(cs.CategoryName) + CounterNumber, sn),
-            InstanceName = ini.Read(nameof(cs.InstanceName) + CounterNumber, sn),
-            CounterName = ini.Read(nameof(cs.CounterName) + CounterNumber, sn),
-            ColorR = ini.Read(nameof(cs.ColorR) + CounterNumber, sn),
-            ColorG = ini.Read(nameof(cs.ColorG) + CounterNumber, sn),
-            ColorB = ini.Read(nameof(cs.ColorB) + CounterNumber, sn),
-            Shape = ini.Read(nameof(cs.Shape) + CounterNumber, sn),
-            Blinker = ini.Read(nameof(cs.Blinker) + CounterNumber, sn),
-            BlinkerType = ini.Read(nameof(cs.BlinkerType) + CounterNumber, sn),
-            RefreshRate = ini.Read(nameof(cs.RefreshRate) + CounterNumber, sn)
+            CategoryName = ini.Read(nameof(cs.CategoryName), sn),
+            InstanceName = ini.Read(nameof(cs.InstanceName), sn),
+            CounterName = ini.Read(nameof(cs.CounterName), sn),
+            ColorR = ini.Read(nameof(cs.ColorR), sn),
+            ColorG = ini.Read(nameof(cs.ColorG), sn),
+            ColorB = ini.Read(nameof(cs.ColorB), sn),
+            Shape = ini.Read(nameof(cs.Shape), sn),
+            Blinker = ini.Read(nameof(cs.Blinker), sn),
+            BlinkerType = ini.Read(nameof(cs.BlinkerType), sn),
+            RefreshRate = ini.Read(nameof(cs.RefreshRate), sn)
         };
 
         Counters.Add(new Counter(cs));
