@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -102,9 +101,9 @@ public partial class Counter
     private CounterSettings Settings;
 
     //Top level menu items - category names, together with sorting components
-    private PerformanceCounterCategory[] Categories;
-    Comparison<PerformanceCounterCategory> ComparisonCategories = new Comparison<PerformanceCounterCategory>(CompareCategories);
-    Comparison<PerformanceCounter> ComparisonCounters = new Comparison<PerformanceCounter>(CompareCounters);
+    private readonly PerformanceCounterCategory[] Categories;
+    private readonly Comparison<PerformanceCounterCategory> ComparisonCategories = new Comparison<PerformanceCounterCategory>(CompareCategories);
+    private readonly Comparison<PerformanceCounter> ComparisonCounters = new Comparison<PerformanceCounter>(CompareCounters);
     private static int CompareCategories(PerformanceCounterCategory Category1, PerformanceCounterCategory Category2)
     { return Category1.CategoryName.CompareTo(Category2.CategoryName); }
     private static int CompareCounters(PerformanceCounter Counter1, PerformanceCounter Counter2)
@@ -267,7 +266,7 @@ public partial class Counter
         //In case input is not parseable, it is 50 ms by default
         TimerPoll.Interval = int.TryParse(TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text, out int i) ? ((i > 2) ? i : 50) : 50;
         TimerBlink.Interval = TimerPoll.Interval / 2;
-        Settings.RefreshRate = ((ToolStripTextBox)sender).Text;
+        Settings.RefreshRate = (sender as ToolStripTextBox).Text;
     }
 
     //Generic menu click handler - execute action according to sender's TAG type
@@ -323,10 +322,10 @@ public partial class Counter
                 if (PC != null) PC.Dispose();
                 (TrayIcon.ContextMenuStrip.Items["MenuInstance"] as ToolStripMenuItem).DropDownItems.Clear();
                 (TrayIcon.ContextMenuStrip.Items["MenuCounter"] as ToolStripMenuItem).DropDownItems.Clear();
-                FillMenu(TrayIcon.ContextMenuStrip.Items["MenuInstance"], //destination submenu
-                    pcc.GetInstanceNames()); //filler objects - instance names
+                string[] il = pcc.GetInstanceNames();
+                Array.Sort(il);
+                FillMenu(TrayIcon.ContextMenuStrip.Items["MenuInstance"], il);
                 cnt_name = "(" + Settings.Number + ") " + pcc.CategoryName;
-
                 break;
 
             //Instance click - clean counter names submenu and fill it with fresh list
@@ -406,16 +405,13 @@ public partial class Counter
 
             //Counter instance - this one has no special type, it is ordinary string
             case string[] s:
-                List<string> sl = new List<string>(s);
-                sl.Sort();
-                foreach (string inst in sl)
+                foreach (string inst in s)
                     mi.DropDownItems.Add(new ToolStripMenuItem(inst, null, MenuItemClick)
                     {
                         Name = inst,
                         Checked = false,
                         Tag = inst
                     });
-                sl.Clear();
                 break;
 
             //Counter name
@@ -471,6 +467,7 @@ public partial class Counter
                 case BlinkerType.Value:
                     int[] Value = new int[5];
                     int Average;
+                    int Sum;
 
                     //Shift values left, make room for new readout
                     for (int i = 0; i < Value.Length - 1; i++)
@@ -478,12 +475,13 @@ public partial class Counter
                     Value[Value.Length - 1] = (int)PC.NextValue();
 
                     //Calculate average value
-                    int sum = 0;
+                    Sum = 0;
                     for (int i = 0; i < Value.Length; i++)
-                        sum += Value[i];
-                    Average = sum / Value.Length;
+                        Sum += Value[i];
+                    Average = Sum / Value.Length;
 
                     //Now do some scaling - disk load is usually below 50% so pump it up a bit
+                    //TODO - not necesarily the case for other types of counters, eg. those other than percentage value
                     if (Average <= 2) Average *= 10;
                     else if (Average <= 5) Average *= 7;
                     else if (Average <= 10) Average *= 4;
@@ -496,8 +494,7 @@ public partial class Counter
                     DrawTrayIcon(Color.FromArgb(
                         LED.ColorOn.R * Average / 100,
                         LED.ColorOn.G * Average / 100,
-                        LED.ColorOn.B * Average / 100
-                        ));
+                        LED.ColorOn.B * Average / 100));
                     break;
 
                 //On-off blinker - blink if counter reports something else than zero
