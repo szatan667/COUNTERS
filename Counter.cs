@@ -101,6 +101,15 @@ public partial class Counter
     //Settings passed from outside world, usually read from INI file
     private CounterSettings Settings;
 
+    //Top level menu items - category names, together with sorting components
+    private PerformanceCounterCategory[] Categories;
+    Comparison<PerformanceCounterCategory> ComparisonCategories = new Comparison<PerformanceCounterCategory>(CompareCategories);
+    Comparison<PerformanceCounter> ComparisonCounters = new Comparison<PerformanceCounter>(CompareCounters);
+    private static int CompareCategories(PerformanceCounterCategory Category1, PerformanceCounterCategory Category2)
+    { return Category1.CategoryName.CompareTo(Category2.CategoryName); }
+    private static int CompareCounters(PerformanceCounter Counter1, PerformanceCounter Counter2)
+    { return Counter1.CounterName.CompareTo(Counter2.CounterName); }
+
     //Create counter object with desired settings
     public Counter(CounterSettings CounterSettings)
     {
@@ -177,7 +186,9 @@ public partial class Counter
         TimerBlink.Tick += TimerBlink_Tick;
 
         //Now start creating menu items - fill in list of performance categories available (eg. processor, disk, network, etc.)
-        FillMenu(TrayIcon.ContextMenuStrip.Items["MenuCategory"], PerformanceCounterCategory.GetCategories());
+        Categories = PerformanceCounterCategory.GetCategories();
+        Array.Sort(Categories, ComparisonCategories);
+        FillMenu(TrayIcon.ContextMenuStrip.Items["MenuCategory"], Categories);
 
         //Now 'click' each item in the menu as passed from INI file by caller
         //CATEGORIES
@@ -323,10 +334,9 @@ public partial class Counter
                 TimerPoll.Enabled = false;
                 if (PC != null) PC.Dispose();
                 (TrayIcon.ContextMenuStrip.Items["MenuCounter"] as ToolStripMenuItem).DropDownItems.Clear();
-                FillMenu(TrayIcon.ContextMenuStrip.Items["MenuCounter"],
-                         PerformanceCounterCategory.GetCategories()[SelectedMenuItemIndex(
-                             TrayIcon.ContextMenuStrip.Items["MenuCategory"],
-                             SelectedMenuItemName(TrayIcon.ContextMenuStrip.Items["MenuCategory"]))].GetCounters(inst));
+                PerformanceCounter[] cl = Categories[SelectedMenuItemIndex(TrayIcon.ContextMenuStrip.Items["MenuCategory"])].GetCounters(inst);
+                Array.Sort(cl, ComparisonCounters);
+                FillMenu(TrayIcon.ContextMenuStrip.Items["MenuCounter"], cl);
                 cnt_name += "\\" + inst;
                 break;
 
@@ -433,11 +443,11 @@ public partial class Counter
         return null;
     }
 
-    //Get menu item index by name
-    private int SelectedMenuItemIndex(ToolStripItem MenuItem, string Name)
+    //Get selected menu item index
+    private int SelectedMenuItemIndex(ToolStripItem MenuItem)
     {
         for (int i = 0; i < (MenuItem as ToolStripMenuItem).DropDownItems.Count; i++)
-            if ((MenuItem as ToolStripMenuItem).DropDownItems[i].Name == Name)
+            if (((MenuItem as ToolStripMenuItem).DropDownItems[i] as ToolStripMenuItem).Checked)
                 return i;
         return -1;
     }
