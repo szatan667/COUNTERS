@@ -119,12 +119,12 @@ public partial class Counter
         Settings = CounterSettings;
 
         //Create tray icon with context menu strip; actual icon is null - it will be drawn in runtime
-        TrayIcon = new NotifyIcon()
+        TrayIcon = new()
         {
             Text = "(" + Settings.Number + ") " + "Blink!",
             Visible = true,
             Icon = null,
-            ContextMenuStrip = new ContextMenuStrip()
+            ContextMenuStrip = new()
         };
 
         //Create context menu
@@ -134,13 +134,13 @@ public partial class Counter
             new ToolStripLabel("(" + Settings.Number + ") " + "Pick your counter...") { Name = "MenuCounterName", Enabled = false },
 
             //Counter consists of category, instance and counter name
-            new ToolStripSeparator() { Name = "Separator" },
+            new ToolStripSeparator { Name = "Separator" },
             new ToolStripMenuItem { Text = "CATEGORY", Name = "MenuCategory" },
             new ToolStripMenuItem { Text = "INSTANCE", Name = "MenuInstance" },
             new ToolStripMenuItem { Text = "COUNTER", Name = "MenuCounter" },
 
             //Settings section
-            new ToolStripSeparator() { Name = "Separator" },
+            new ToolStripSeparator { Name = "Separator" },
             new ToolStripMenuItem("Blink", null, new ToolStripItem[]
             {
                 new ToolStripMenuItem("ON", null, MenuItemClick) { Name = Blinker.On.ToString(), Tag = Blinker.On },
@@ -155,7 +155,7 @@ public partial class Counter
             }
             ) { Name = "MenuBlinkerType" },
 
-            new ToolStripMenuItem("Color...", null, MenuItemClick) { Tag = new ColorDialog() },
+            new ToolStripMenuItem("Color...", null, MenuItemClick) { Tag = new() },
             new ToolStripMenuItem("Shape", null, new ToolStripItem[]
             {
                 new ToolStripMenuItem("Circle", null, MenuItemClick) { Name = ((int)LedShape.Circle).ToString(), Tag = LedShape.Circle },
@@ -169,20 +169,20 @@ public partial class Counter
             new ToolStripTextBox("MenuRefreshRate") { TextBoxTextAlign = HorizontalAlignment.Right },
 
             //Add, remove or clone counter
-            new ToolStripSeparator() { Name = "Separator" },
+            new ToolStripSeparator { Name = "Separator" },
             new ToolStripMenuItem("Duplicate counter", null, MenuDuplicateCounter) { Tag = Settings.Number },
             new ToolStripMenuItem("Add counter", null, MenuAddCounter),
             new ToolStripMenuItem("Remove counter", null, MenuRemoveCounter) { Name = "MenuRemove", Enabled = false },
 
             //Run at startup
-            new ToolStripSeparator() { Name = "Separator" },
+            new ToolStripSeparator { Name = "Separator" },
             new ToolStripMenuItem("Run at startup", null, MenuRunAtStartup) { Name = "MenuRunAtStartup", Checked = false },
 
             //Exit app
-            new ToolStripSeparator() { Name = "Separator" },
+            new ToolStripSeparator { Name = "Separator" },
             new ToolStripMenuItem("Exit", null, MenuExit) { Name = "MenuExit" }
         });
-        TrayIcon.ContextMenuStrip.Items["MenuExit"].Font = new Font(TrayIcon.ContextMenuStrip.Items["MenuExit"].Font, FontStyle.Bold);
+        TrayIcon.ContextMenuStrip.Items["MenuExit"].Font = new(TrayIcon.ContextMenuStrip.Items["MenuExit"].Font, FontStyle.Bold);
         TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].TextChanged += RefreshRate_TextChanged;
 
         //Polling and blinking timers, disabled until actual counter is created
@@ -214,10 +214,10 @@ public partial class Counter
             TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text = "50";
 
         //Create graphics context and logical LED
-        Bitmap = new Bitmap(32, 32);
+        Bitmap = new(32, 32);
         GFX = Graphics.FromImage(Bitmap);
         GFX.SmoothingMode = SmoothingMode.HighQuality;
-        LED = new DiskLed(GFX);
+        LED = new(GFX);
 
         //BLINKER
         if (CounterSettings.Blinker != string.Empty && CounterSettings.Blinker != null)
@@ -375,7 +375,7 @@ public partial class Counter
 
             //Should never happen
             default:
-                throw new Exception("Counter menu click event failed :(" + Environment.NewLine + MenuItem);
+                throw new("Counter menu click event failed :(" + Environment.NewLine + MenuItem);
         }
 
         //Place checkmark if desired
@@ -441,7 +441,7 @@ public partial class Counter
                 break;
 
             default:
-                throw new Exception("Counter menu build failed :(");
+                throw new("Counter menu build failed :(");
         }
     }
 
@@ -518,7 +518,7 @@ public partial class Counter
                         DrawTrayIcon(LED.ColorOn);
                     break;
                 default:
-                    throw new Exception("Counter blinker type invalid :(" + Environment.NewLine + LED.BlinkType);
+                    throw new("Counter blinker type invalid :(" + Environment.NewLine + LED.BlinkType);
             }
         }
         catch (Exception ex)
@@ -570,7 +570,7 @@ public partial class Counter
         {
             Blinker.On => true,
             Blinker.Off => false,
-            _ => throw new Exception("Counter blinker state invalid :(" + Environment.NewLine + LED.Blink),
+            _ => throw new("Counter blinker state invalid :(" + Environment.NewLine + LED.Blink),
         };
     }
 
@@ -579,7 +579,7 @@ public partial class Counter
     {
         CounterSettings cs = Settings;
         cs.Number++;
-        COUNTERS.Counters.Add(new Counter(cs));
+        COUNTERS.Counters.Add(new(cs));
 
         if (COUNTERS.Counters.Count > 1)
             foreach (Counter c in COUNTERS.Counters)
@@ -591,7 +591,7 @@ public partial class Counter
     //Add new counter
     private void MenuAddCounter(object s, EventArgs e)
     {
-        COUNTERS.Counters.Add(new Counter(new CounterSettings { Number = COUNTERS.Counters.Count + 1 }));
+        COUNTERS.Counters.Add(new(new CounterSettings { Number = COUNTERS.Counters.Count + 1 }));
 
         if (COUNTERS.Counters.Count > 1)
             foreach (Counter c in COUNTERS.Counters)
@@ -645,19 +645,20 @@ public partial class Counter
                 !(c.TrayIcon.ContextMenuStrip.Items["MenuRunAtStartup"] as ToolStripMenuItem).Checked;
     }
 
-    private static void CreateStartupTask(TaskService ts)
+    private static void CreateStartupTask(TaskService TaskService)
     {
-        TaskDefinition definition = ts.NewTask();
+        TaskDefinition definition = TaskService.NewTask();
+        
         definition.RegistrationInfo.Description = "COUNTERS STARTUP";
         definition.RegistrationInfo.Author = WindowsIdentity.GetCurrent().Name;
-        TriggerCollection triggers = definition.Triggers;
-        LogonTrigger unboundTrigger = new()
+
+        definition.Triggers.Add<Trigger>(new LogonTrigger
         {
             Enabled = true,
             UserId = WindowsIdentity.GetCurrent().Name
-        };
-        triggers.Add<LogonTrigger>(unboundTrigger);
-        definition.Actions.Add<ExecAction>(new ExecAction()
+        });
+
+        definition.Actions.Add(new ExecAction
         {
             Path = Assembly.GetEntryAssembly().Location,
             WorkingDirectory = Assembly.GetEntryAssembly().Location.Substring(0, Assembly.GetEntryAssembly().Location.LastIndexOf("\\"))
@@ -665,7 +666,8 @@ public partial class Counter
         definition.Settings.DisallowStartIfOnBatteries = false;
         definition.Settings.StopIfGoingOnBatteries = false;
         definition.Settings.ExecutionTimeLimit = TimeSpan.Zero;
-        ts.RootFolder.RegisterTaskDefinition("COUNTERS STARTUP", definition);
+        
+        TaskService.RootFolder.RegisterTaskDefinition("COUNTERS STARTUP", definition);
     }
 
     //Exit click
