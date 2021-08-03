@@ -663,6 +663,7 @@ public partial class Counter
             Path = Assembly.GetEntryAssembly().Location,
             WorkingDirectory = Assembly.GetEntryAssembly().Location.Substring(0, Assembly.GetEntryAssembly().Location.LastIndexOf("\\"))
         });
+
         definition.Settings.DisallowStartIfOnBatteries = false;
         definition.Settings.StopIfGoingOnBatteries = false;
         definition.Settings.ExecutionTimeLimit = TimeSpan.Zero;
