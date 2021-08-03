@@ -1,8 +1,11 @@
-﻿using System;
+﻿using Microsoft.Win32.TaskScheduler;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Windows.Forms;
 
 //Settings struct - use properties to store values and save them to INI file
@@ -102,8 +105,8 @@ public partial class Counter
 
     //Top level menu items - category names, together with sorting components
     private readonly PerformanceCounterCategory[] Categories;
-    private readonly Comparison<PerformanceCounterCategory> ComparisonCategories = new Comparison<PerformanceCounterCategory>(CompareCategories);
-    private readonly Comparison<PerformanceCounter> ComparisonCounters = new Comparison<PerformanceCounter>(CompareCounters);
+    private readonly Comparison<PerformanceCounterCategory> ComparisonCategories = new(CompareCategories);
+    private readonly Comparison<PerformanceCounter> ComparisonCounters = new(CompareCounters);
     private static int CompareCategories(PerformanceCounterCategory Category1, PerformanceCounterCategory Category2)
     { return Category1.CategoryName.CompareTo(Category2.CategoryName); }
     private static int CompareCounters(PerformanceCounter Counter1, PerformanceCounter Counter2)
@@ -165,11 +168,15 @@ public partial class Counter
             new ToolStripLabel("Refresh rate [ms]:") { Enabled = false },
             new ToolStripTextBox("MenuRefreshRate") { TextBoxTextAlign = HorizontalAlignment.Right },
 
-            //Add,remove or clone counter
+            //Add, remove or clone counter
             new ToolStripSeparator() { Name = "Separator" },
             new ToolStripMenuItem("Duplicate counter", null, MenuDuplicateCounter) { Tag = Settings.Number },
             new ToolStripMenuItem("Add counter", null, MenuAddCounter),
             new ToolStripMenuItem("Remove counter", null, MenuRemoveCounter) { Name = "MenuRemove", Enabled = false },
+
+            //Run at startup
+            new ToolStripSeparator() { Name = "Separator" },
+            new ToolStripMenuItem("Run at startup", null, MenuRunAtStartup) { Name = "MenuRunAtStartup", Checked = false },
 
             //Exit app
             new ToolStripSeparator() { Name = "Separator" },
@@ -254,6 +261,14 @@ public partial class Counter
         }
         else
             MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuShape"] as ToolStripMenuItem).DropDownItems[((int)LedShape.Circle).ToString()], null);
+
+        //Startup checkmark
+        using (TaskService taskService = new())
+        {
+            foreach (Task t in taskService.RootFolder.GetTasks())
+                if (t.Name == "COUNTERS STARTUP" && t.Enabled)
+                    (TrayIcon.ContextMenuStrip.Items["MenuRunAtStartup"] as ToolStripMenuItem).Checked = true;
+        }
 
         //Finally, draw LED with light off
         DrawTrayIcon(LED.ColorOff);
@@ -519,51 +534,44 @@ public partial class Counter
     //Draw tray icon light
     private void DrawTrayIcon(Color Color)
     {
-        using (SolidBrush b = new SolidBrush(Color))
+        using SolidBrush b = new(Color);
+        //Destroy current icon to avoid handle leaking and GDI errors
+        DestroyIcon(BitmapHandle);
+
+        //Draw desired led shape
+        GFX.Clear(DiskLed.Background);
+        switch (LED.Shape)
         {
-            //Destroy current icon to avoid handle leaking and GDI errors
-            DestroyIcon(BitmapHandle);
-
-            //Draw desired led shape
-            GFX.Clear(DiskLed.Background);
-            switch (LED.Shape)
-            {
-                case LedShape.Circle:
-                    GFX.FillEllipse(b, LedBounds.BoundsCircle);
-                    break;
-                case LedShape.Rectangle:
-                    GFX.FillRectangle(b, LedBounds.BoundsRectangle);
-                    break;
-                case LedShape.BarVertical:
-                    GFX.FillRectangle(b, LedBounds.BoundsBarVertical);
-                    break;
-                case LedShape.BarHorizontal:
-                    GFX.FillRectangle(b, LedBounds.BoundsBarHorizontal);
-                    break;
-                case LedShape.Triangle:
-                    GFX.FillPolygon(b, LedBounds.BoundsTriangle);
-                    break;
-                default:
-                    break;
-            }
-
-            //Send drawn image to tray icon
-            BitmapHandle = Bitmap.GetHicon();
-            TrayIcon.Icon = Icon.FromHandle(BitmapHandle);
-
-            //To blink or not to blink
-            switch (LED.Blink)
-            {
-                case Blinker.On:
-                    TimerBlink.Enabled = true;
-                    break;
-                case Blinker.Off:
-                    TimerBlink.Enabled = false;
-                    break;
-                default:
-                    throw new Exception("Counter blinker state invalid :(" + Environment.NewLine + LED.Blink);
-            }
+            case LedShape.Circle:
+                GFX.FillEllipse(b, LedBounds.BoundsCircle);
+                break;
+            case LedShape.Rectangle:
+                GFX.FillRectangle(b, LedBounds.BoundsRectangle);
+                break;
+            case LedShape.BarVertical:
+                GFX.FillRectangle(b, LedBounds.BoundsBarVertical);
+                break;
+            case LedShape.BarHorizontal:
+                GFX.FillRectangle(b, LedBounds.BoundsBarHorizontal);
+                break;
+            case LedShape.Triangle:
+                GFX.FillPolygon(b, LedBounds.BoundsTriangle);
+                break;
+            default:
+                break;
         }
+
+        //Send drawn image to tray icon
+        BitmapHandle = Bitmap.GetHicon();
+        TrayIcon.Icon = Icon.FromHandle(BitmapHandle);
+
+        //To blink or not to blink
+        TimerBlink.Enabled = LED.Blink switch
+        {
+            Blinker.On => true,
+            Blinker.Off => false,
+            _ => throw new Exception("Counter blinker state invalid :(" + Environment.NewLine + LED.Blink),
+        };
     }
 
     //Duplicate existing counter
@@ -604,6 +612,60 @@ public partial class Counter
 
         COUNTERS.ini.Write("numberOfCounters", COUNTERS.Counters.Count.ToString());
         COUNTERS.ini.DeleteSection("Counter" + Settings.Number);
+    }
+
+    //Run app at startup using windows task scheduler
+    private void MenuRunAtStartup(object MenuItem, EventArgs e)
+    {
+        using (TaskService ts = new())
+        {
+            if ((MenuItem as ToolStripMenuItem).Checked)
+                foreach (Task t in ts.RootFolder.GetTasks())
+                {
+                    if (t.Name == "COUNTERS STARTUP")
+                        t.Enabled = false;
+                }
+            else
+            {
+                foreach (Task t in ts.RootFolder.GetTasks())
+                    if (t.Name == "COUNTERS STARTUP")
+                    {
+                        t.Enabled = true;
+                        foreach (Counter c in COUNTERS.Counters)
+                            (c.TrayIcon.ContextMenuStrip.Items["MenuRunAtStartup"] as ToolStripMenuItem).Checked =
+                                !(c.TrayIcon.ContextMenuStrip.Items["MenuRunAtStartup"] as ToolStripMenuItem).Checked;
+                        return;
+                    }
+                Counter.CreateStartupTask(ts);
+            }
+        }
+
+        foreach (Counter c in COUNTERS.Counters)
+            (c.TrayIcon.ContextMenuStrip.Items["MenuRunAtStartup"] as ToolStripMenuItem).Checked = 
+                !(c.TrayIcon.ContextMenuStrip.Items["MenuRunAtStartup"] as ToolStripMenuItem).Checked;
+    }
+
+    private static void CreateStartupTask(TaskService ts)
+    {
+        TaskDefinition definition = ts.NewTask();
+        definition.RegistrationInfo.Description = "COUNTERS STARTUP";
+        definition.RegistrationInfo.Author = WindowsIdentity.GetCurrent().Name;
+        TriggerCollection triggers = definition.Triggers;
+        LogonTrigger unboundTrigger = new()
+        {
+            Enabled = true,
+            UserId = WindowsIdentity.GetCurrent().Name
+        };
+        triggers.Add<LogonTrigger>(unboundTrigger);
+        definition.Actions.Add<ExecAction>(new ExecAction()
+        {
+            Path = Assembly.GetEntryAssembly().Location,
+            WorkingDirectory = Assembly.GetEntryAssembly().Location.Substring(0, Assembly.GetEntryAssembly().Location.LastIndexOf("\\"))
+        });
+        definition.Settings.DisallowStartIfOnBatteries = false;
+        definition.Settings.StopIfGoingOnBatteries = false;
+        definition.Settings.ExecutionTimeLimit = TimeSpan.Zero;
+        ts.RootFolder.RegisterTaskDefinition("COUNTERS STARTUP", definition);
     }
 
     //Exit click

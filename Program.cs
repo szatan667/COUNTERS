@@ -11,7 +11,7 @@ public class COUNTERS : ApplicationContext
     public static List<Counter> Counters;
 
     //Settings in ini file
-    public static readonly IniFile ini = new IniFile();
+    public static readonly IniFile ini = new();
 
     //Main object initialize
     public COUNTERS()
@@ -40,7 +40,7 @@ public class COUNTERS : ApplicationContext
     {
         //Get counter settings from INI file
         string sn = "Counter" + CounterNumber;
-        CounterSettings cs = new CounterSettings()
+        CounterSettings cs = new()
         {
             Number = Counters.Count + 1,
             CategoryName = ini.Read(nameof(cs.CategoryName), sn),
