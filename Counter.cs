@@ -155,7 +155,7 @@ public partial class Counter
             }
             ) { Name = "MenuBlinkerType" },
 
-            new ToolStripMenuItem("Color...", null, MenuItemClick) { Tag = new() },
+            new ToolStripMenuItem("Color...", null, MenuItemClick) { Tag = new ColorDialog()},
             new ToolStripMenuItem("Shape", null, new ToolStripItem[]
             {
                 new ToolStripMenuItem("Circle", null, MenuItemClick) { Name = ((int)LedShape.Circle).ToString(), Tag = LedShape.Circle },
