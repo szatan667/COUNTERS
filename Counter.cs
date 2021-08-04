@@ -176,7 +176,12 @@ public partial class Counter
 
             //Run at startup
             new ToolStripSeparator { Name = "Separator" },
-            new ToolStripMenuItem("Run at startup", null, MenuRunAtStartup) { Name = "MenuRunAtStartup", Checked = false },
+            new ToolStripMenuItem("Run at startup", null, MenuRunAtStartup)
+            {
+                Name = "MenuRunAtStartup",
+                Checked = (new TaskService().RootFolder.GetTasks(COUNTERS.TaskName).Count != 0 &&
+                           new TaskService().RootFolder.GetTasks(COUNTERS.TaskName)[COUNTERS.TaskName.ToString()].Enabled)
+            },
 
             //Exit app
             new ToolStripSeparator { Name = "Separator" },
@@ -261,14 +266,6 @@ public partial class Counter
         }
         else
             MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuShape"] as ToolStripMenuItem).DropDownItems[((int)LedShape.Circle).ToString()], null);
-
-        //Startup checkmark
-        using (TaskService taskService = new())
-        {
-            foreach (Task t in taskService.RootFolder.GetTasks())
-                if (t.Name == "COUNTERS STARTUP" && t.Enabled)
-                    (TrayIcon.ContextMenuStrip.Items["MenuRunAtStartup"] as ToolStripMenuItem).Checked = true;
-        }
 
         //Finally, draw LED with light off
         DrawTrayIcon(LED.ColorOff);
@@ -506,10 +503,9 @@ public partial class Counter
                     else if (Average <= 100) Average *= 1;
                     else if (Average > 100) Average = 100; //just in case for some reason calc goes out of bounds (eg. dummy readout out of scale?)
 
-                    DrawTrayIcon(Color.FromArgb(
-                        LED.ColorOn.R * Average / 100,
-                        LED.ColorOn.G * Average / 100,
-                        LED.ColorOn.B * Average / 100));
+                    DrawTrayIcon(Color.FromArgb(LED.ColorOn.R * Average / 100,
+                                                LED.ColorOn.G * Average / 100,
+                                                LED.ColorOn.B * Average / 100));
                     break;
 
                 //On-off blinker - blink if counter reports something else than zero
@@ -617,38 +613,24 @@ public partial class Counter
     //Run app at startup using windows task scheduler
     private void MenuRunAtStartup(object MenuItem, EventArgs e)
     {
-        using (TaskService ts = new())
-        {
-            if ((MenuItem as ToolStripMenuItem).Checked)
-                foreach (Task t in ts.RootFolder.GetTasks())
-                {
-                    if (t.Name == "COUNTERS STARTUP")
-                        t.Enabled = false;
-                }
-            else
-            {
-                foreach (Task t in ts.RootFolder.GetTasks())
-                    if (t.Name == "COUNTERS STARTUP")
-                    {
-                        t.Enabled = true;
-                        foreach (Counter c in COUNTERS.Counters)
-                            (c.TrayIcon.ContextMenuStrip.Items["MenuRunAtStartup"] as ToolStripMenuItem).Checked =
-                                !(c.TrayIcon.ContextMenuStrip.Items["MenuRunAtStartup"] as ToolStripMenuItem).Checked;
-                        return;
-                    }
-                Counter.CreateStartupTask(ts);
-            }
-        }
+        using TaskCollection t = new TaskService().RootFolder.GetTasks(COUNTERS.TaskName);
+        if ((MenuItem as ToolStripMenuItem).Checked)
+            t[COUNTERS.TaskName.ToString()].Enabled = false;
+        else
+            if (t.Count > 0)
+            t[COUNTERS.TaskName.ToString()].Enabled = true;
+        else
+            CreateStartupTask();
 
         foreach (Counter c in COUNTERS.Counters)
-            (c.TrayIcon.ContextMenuStrip.Items["MenuRunAtStartup"] as ToolStripMenuItem).Checked = 
-                !(c.TrayIcon.ContextMenuStrip.Items["MenuRunAtStartup"] as ToolStripMenuItem).Checked;
+            (c.TrayIcon.ContextMenuStrip.Items[(MenuItem as ToolStripMenuItem).Name] as ToolStripMenuItem).Checked =
+                !(c.TrayIcon.ContextMenuStrip.Items[(MenuItem as ToolStripMenuItem).Name] as ToolStripMenuItem).Checked;
     }
 
-    private static void CreateStartupTask(TaskService TaskService)
+    private static void CreateStartupTask()
     {
-        TaskDefinition definition = TaskService.NewTask();
-        
+        using TaskDefinition definition = new TaskService().NewTask();
+
         definition.RegistrationInfo.Description = "COUNTERS STARTUP";
         definition.RegistrationInfo.Author = WindowsIdentity.GetCurrent().Name;
 
@@ -667,8 +649,8 @@ public partial class Counter
         definition.Settings.DisallowStartIfOnBatteries = false;
         definition.Settings.StopIfGoingOnBatteries = false;
         definition.Settings.ExecutionTimeLimit = TimeSpan.Zero;
-        
-        TaskService.RootFolder.RegisterTaskDefinition("COUNTERS STARTUP", definition);
+
+        _ = new TaskService().RootFolder.RegisterTaskDefinition("COUNTERS STARTUP", definition);
     }
 
     //Exit click
