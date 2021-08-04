@@ -179,8 +179,8 @@ public partial class Counter
             new ToolStripMenuItem("Run at startup", null, MenuRunAtStartup)
             {
                 Name = "MenuRunAtStartup",
-                Checked = (new TaskService().RootFolder.GetTasks(COUNTERS.TaskName).Count != 0 &&
-                           new TaskService().RootFolder.GetTasks(COUNTERS.TaskName)[COUNTERS.TaskName.ToString()].Enabled)
+                Checked = new TaskService().RootFolder.GetTasks(COUNTERS.TaskName).Count != 0 &&
+                          new TaskService().RootFolder.GetTasks(COUNTERS.TaskName)[COUNTERS.TaskName.ToString()].Enabled
             },
 
             //Exit app
