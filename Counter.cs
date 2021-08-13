@@ -627,7 +627,7 @@ public partial class Counter
                 !(c.TrayIcon.ContextMenuStrip.Items[(MenuItem as ToolStripMenuItem).Name] as ToolStripMenuItem).Checked;
     }
 
-    private static void CreateStartupTask()
+    private void CreateStartupTask()
     {
         using TaskDefinition definition = new TaskService().NewTask();
 
