@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 //Main couter class
@@ -13,9 +12,6 @@ public class COUNTERS : ApplicationContext
 
     //Settings in ini file
     public static readonly IniFile ini = new();
-
-    //Startup task constant
-    public static Regex TaskName = new("COUNTERS STARTUP");
 
     //Main object initialize
     public COUNTERS()

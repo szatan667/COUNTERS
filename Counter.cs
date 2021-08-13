@@ -6,6 +6,7 @@ using System.Drawing.Drawing2D;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 //Settings struct - use properties to store values and save them to INI file
@@ -112,6 +113,9 @@ public partial class Counter
     private static int CompareCounters(PerformanceCounter Counter1, PerformanceCounter Counter2)
     { return Counter1.CounterName.CompareTo(Counter2.CounterName); }
 
+    //Startup task name
+    private readonly Regex StartupTask = new("COUNTERS STARTUP");
+
     //Create counter object with desired settings
     public Counter(CounterSettings CounterSettings)
     {
@@ -179,8 +183,8 @@ public partial class Counter
             new ToolStripMenuItem("Run at startup", null, MenuRunAtStartup)
             {
                 Name = "MenuRunAtStartup",
-                Checked = new TaskService().RootFolder.GetTasks(COUNTERS.TaskName).Count != 0 &&
-                          new TaskService().RootFolder.GetTasks(COUNTERS.TaskName)[COUNTERS.TaskName.ToString()].Enabled
+                Checked = new TaskService().RootFolder.GetTasks(StartupTask).Count != 0 &&
+                          new TaskService().RootFolder.GetTasks(StartupTask)[StartupTask.ToString()].Enabled,
             },
 
             //Exit app
@@ -613,12 +617,12 @@ public partial class Counter
     //Run app at startup using windows task scheduler
     private void MenuRunAtStartup(object MenuItem, EventArgs e)
     {
-        using TaskCollection t = new TaskService().RootFolder.GetTasks(COUNTERS.TaskName);
+        using TaskCollection t = new TaskService().RootFolder.GetTasks(StartupTask);
         if ((MenuItem as ToolStripMenuItem).Checked)
-            t[COUNTERS.TaskName.ToString()].Enabled = false;
+            t[StartupTask.ToString()].Enabled = false;
         else
             if (t.Count > 0)
-            t[COUNTERS.TaskName.ToString()].Enabled = true;
+            t[StartupTask.ToString()].Enabled = true;
         else
             CreateStartupTask();
 
@@ -631,7 +635,7 @@ public partial class Counter
     {
         using TaskDefinition definition = new TaskService().NewTask();
 
-        definition.RegistrationInfo.Description = "COUNTERS STARTUP";
+        definition.RegistrationInfo.Description = StartupTask.ToString();
         definition.RegistrationInfo.Author = WindowsIdentity.GetCurrent().Name;
 
         definition.Triggers.Add<Trigger>(new LogonTrigger
@@ -650,7 +654,7 @@ public partial class Counter
         definition.Settings.StopIfGoingOnBatteries = false;
         definition.Settings.ExecutionTimeLimit = TimeSpan.Zero;
 
-        _ = new TaskService().RootFolder.RegisterTaskDefinition("COUNTERS STARTUP", definition);
+        _ = new TaskService().RootFolder.RegisterTaskDefinition(StartupTask.ToString(), definition);
     }
 
     //Exit click
