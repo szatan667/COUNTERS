@@ -1,6 +1,8 @@
 ﻿using System.Drawing;
 
-//Drawing bounds for different shapes
+/// <summary>
+/// Drawing bounds for differend led shapes
+/// </summary>
 public struct LedBounds
 {
     public static Rectangle BoundsCircle;
@@ -10,7 +12,9 @@ public struct LedBounds
     public static Point[] BoundsTriangle;
 }
 
-//Shapes
+/// <summary>
+/// Available led shapes
+/// </summary>
 public enum LedShape
 {
     Circle,
@@ -20,21 +24,27 @@ public enum LedShape
     Triangle
 }
 
-//Blink state
+/// <summary>
+/// Blinker state
+/// </summary>
 public enum Blinker
 {
     On,
     Off
 }
 
-//Blink type
+/// <summary>
+/// Blinker type
+/// </summary>
 public enum BlinkerType
 {
     Value,
     OnOff
 }
 
-//Disk activity icon object
+/// <summary>
+/// Counter activity led object
+/// </summary>
 public class DiskLed
 {
     //Default colors and drawing position
@@ -45,6 +55,10 @@ public class DiskLed
     public Blinker Blink;
     public BlinkerType BlinkType;
 
+    /// <summary>
+    /// Led object to be drwan on desired graphics
+    /// </summary>
+    /// <param name="gfx">Target graphics object</param>
     public DiskLed(Graphics gfx)
     {
         LedBounds.BoundsCircle = new Rectangle((int)(gfx.VisibleClipBounds.Width * 0.2 / 2),

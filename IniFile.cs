@@ -3,7 +3,9 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 
-//INI file handler
+/// <summary>
+/// INI file handler
+/// </summary>
 public class IniFile
 {
     readonly string Path;
@@ -15,10 +17,7 @@ public class IniFile
     [DllImport("kernel32", CharSet = CharSet.Unicode)]
     static extern int GetPrivateProfileString(string Section, string Key, string Default, StringBuilder RetVal, int Size, string FilePath);
 
-    public IniFile(string IniPath = null)
-    {
-        Path = new FileInfo(IniPath ?? EXE + ".ini").FullName.ToString();
-    }
+    public IniFile(string IniPath = null) => Path = new FileInfo(IniPath ?? EXE + ".ini").FullName.ToString();
 
     public string Read(string Key, string Section = null)
     {
@@ -27,23 +26,11 @@ public class IniFile
         return RetVal.ToString();
     }
 
-    public void Write(string Key, string Value, string Section = null)
-    {
-        WritePrivateProfileString(Section ?? EXE, Key, Value, Path);
-    }
+    public void Write(string Key, string Value, string Section = null) => WritePrivateProfileString(Section ?? EXE, Key, Value, Path);
 
-    public void DeleteKey(string Key, string Section = null)
-    {
-        Write(Key, null, Section ?? EXE);
-    }
+    public void DeleteKey(string Key, string Section = null) => Write(Key, null, Section ?? EXE);
 
-    public void DeleteSection(string Section = null)
-    {
-        Write(null, null, Section ?? EXE);
-    }
+    public void DeleteSection(string Section = null) => Write(null, null, Section ?? EXE);
 
-    public bool KeyExists(string Key, string Section = null)
-    {
-        return Read(Key, Section).Length > 0;
-    }
+    public bool KeyExists(string Key, string Section = null) => Read(Key, Section).Length > 0;
 }

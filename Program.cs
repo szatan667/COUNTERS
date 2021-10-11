@@ -1,10 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Windows.Forms;
 
-//Main couter class
+/// <summary>
+/// Main counter class
+/// </summary>
 public class COUNTERS : ApplicationContext
 {
-    //Program entry point
+    /// <summary>
+    /// Program entry point
+    /// </summary>
     static void Main() => Application.Run(new COUNTERS());
 
     //List of counters
@@ -13,7 +17,9 @@ public class COUNTERS : ApplicationContext
     //Settings in ini file
     public static readonly IniFile ini = new();
 
-    //Main object initialize
+    /// <summary>
+    /// Initialize main object
+    /// </summary>
     public COUNTERS()
     {
         //Create counters list first
@@ -36,6 +42,10 @@ public class COUNTERS : ApplicationContext
                 c.TrayIcon.ContextMenuStrip.Items["MenuRemove"].Enabled = true;
     }
 
+    /// <summary>
+    /// Create counter object from parameters stored in INI file
+    /// </summary>
+    /// <param name="CounterNumber">Counter number read from INI file</param>
     public static void CounterFromIni(int CounterNumber)
     {
         //Get counter settings from INI file

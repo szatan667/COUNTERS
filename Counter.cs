@@ -9,7 +9,9 @@ using System.Security.Principal;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
-//Settings struct - use properties to store values and save them to INI file
+/// <summary>
+/// Settings struct - use properties to store values and save them to INI file
+/// </summary>
 public struct CounterSettings
 {
     public int Number;
@@ -78,7 +80,9 @@ public struct CounterSettings
     private string refreshRate;
 }
 
-//Counter object
+/// <summary>
+/// Counter object
+/// </summary>
 public partial class Counter
 {
     //To allow icon destroyal
@@ -96,6 +100,7 @@ public partial class Counter
 
     //SYSTEM COUNTER
     private PerformanceCounter PC;
+    private int[] Value;
 
     //TIMERS
     private readonly Timer TimerPoll;
@@ -116,7 +121,10 @@ public partial class Counter
     //Startup task name
     private readonly Regex StartupTask = new("COUNTERS STARTUP");
 
-    //Create counter object with desired settings
+    /// <summary>
+    /// Create counter object with desired settings
+    /// </summary>
+    /// <param name="CounterSettings">Set of settings for a counter</param>
     public Counter(CounterSettings CounterSettings)
     {
         //Save counter number
@@ -216,6 +224,9 @@ public partial class Counter
         if (CounterSettings.CounterName != string.Empty && CounterSettings.CounterName != null)
             MenuItemClick((TrayIcon.ContextMenuStrip.Items["MenuCounter"] as ToolStripMenuItem).DropDownItems[CounterSettings.CounterName], null);
 
+        //Initialize counter value
+        Value = new int[5];
+
         //Refresh time
         if (CounterSettings.RefreshRate != null && CounterSettings.RefreshRate != string.Empty)
             TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text = CounterSettings.RefreshRate;
@@ -275,20 +286,28 @@ public partial class Counter
         DrawTrayIcon(LED.ColorOff);
     }
 
-    //Update timers according to GUI input
-    private void RefreshRate_TextChanged(object sender, EventArgs e)
+    /// <summary>
+    /// Update timers according to GUI input
+    /// </summary>
+    /// <param name="s">Source of event, here a control with text attribute</param>
+    /// <param name="e">Event arguments</param>
+    private void RefreshRate_TextChanged(object s, EventArgs e)
     {
         //Minimum for poll timer is 2 ms, because blink timer is always 1/2 of that
         //In case input is not parseable, it is 50 ms by default
         TimerPoll.Interval = int.TryParse(TrayIcon.ContextMenuStrip.Items["MenuRefreshRate"].Text, out int i) ? ((i > 2) ? i : 50) : 50;
         TimerBlink.Interval = TimerPoll.Interval / 2;
-        Settings.RefreshRate = (sender as ToolStripTextBox).Text;
+        Settings.RefreshRate = (s as ToolStripTextBox).Text;
     }
 
-    //Generic menu click handler - execute action according to sender's TAG type
+    /// <summary>
+    /// Generic menu item click handler - execute action according to sender's TAG type
+    /// </summary>
+    /// <param name="MenuItem">Menu item that was clcked</param>
+    /// <param name="e">Event arguments</param>
     private void MenuItemClick(object MenuItem, EventArgs e)
     {
-        //Place checkmark as default but some items dont need that
+        //Place checkmark as default but some items don't need that
         bool placecheckmark = true;
 
         //Temporary counter name string
@@ -399,7 +418,11 @@ public partial class Counter
         TrayIcon.ContextMenuStrip.Items["MenuCounterName"].Text = cnt_name;
     }
 
-    //Fill counter submenus with desired list
+    /// <summary>
+    /// Fill counter submenus with desired list
+    /// </summary>
+    /// <param name="MenuItem">Menu item to be filled in</param>
+    /// <param name="Filler">List of item that will fill menu item</param>
     private void FillMenu(ToolStripItem MenuItem, object[] Filler)
     {
         ToolStripMenuItem mi = MenuItem as ToolStripMenuItem;
@@ -446,7 +469,11 @@ public partial class Counter
         }
     }
 
-    //Get selected menu item name
+    /// <summary>
+    /// Get selected menu item name
+    /// </summary>
+    /// <param name="MenuItem">Menu item where selected item's name will be looked for</param>
+    /// <returns></returns>
     private string SelectedMenuItemName(ToolStripItem MenuItem)
     {
         foreach (ToolStripMenuItem mi in (MenuItem as ToolStripMenuItem).DropDownItems)
@@ -455,7 +482,11 @@ public partial class Counter
         return null;
     }
 
-    //Get selected menu item index
+    /// <summary>
+    /// Get selected menu item index
+    /// </summary>
+    /// <param name="MenuItem">Menu item where selected item's index will be looked for</param>
+    /// <returns></returns>
     private int SelectedMenuItemIndex(ToolStripItem MenuItem)
     {
         for (int i = 0; i < (MenuItem as ToolStripMenuItem).DropDownItems.Count; i++)
@@ -464,14 +495,22 @@ public partial class Counter
         return -1;
     }
 
-    //Icon blink timer - draw "off" light to make it blink
+    /// <summary>
+    /// Icon blink timer event - draw "off" light to make it blink
+    /// </summary>
+    /// <param name="s">Event source</param>
+    /// <param name="e">Event arguments</param>
     private void TimerBlink_Tick(object s, EventArgs e)
     {
         DrawTrayIcon(LED.ColorOff);
         TimerBlink.Enabled = false;
     }
 
-    //Timer event for counter readout
+    /// <summary>
+    /// Timer event for counter readout
+    /// </summary>
+    /// <param name="s">Event source</param>
+    /// <param name="e">Event arguments</param>
     private void TimerPoll_Tick(object s, EventArgs e)
     {
         //Read latest value and get the average reading
@@ -481,7 +520,6 @@ public partial class Counter
             {
                 //Value-based blinker - average over couple of readouts
                 case BlinkerType.Value:
-                    int[] Value = new int[5];
                     int Average;
                     int Sum;
 
@@ -531,7 +569,10 @@ public partial class Counter
         }
     }
 
-    //Draw tray icon light
+    /// <summary>
+    /// Draw tray icon light
+    /// </summary>
+    /// <param name="Color">Desired color for led to be drawn</param>
     private void DrawTrayIcon(Color Color)
     {
         using SolidBrush b = new(Color);
@@ -574,8 +615,12 @@ public partial class Counter
         };
     }
 
-    //Duplicate existing counter
-    private void MenuDuplicateCounter(object MenuItem, EventArgs e)
+    /// <summary>
+    /// Duplicate existing counter
+    /// </summary>
+    /// <param name="s">Event source</param>
+    /// <param name="e">Event arguments</param>
+    private void MenuDuplicateCounter(object s, EventArgs e)
     {
         CounterSettings cs = Settings;
         cs.Number++;
@@ -588,7 +633,11 @@ public partial class Counter
         COUNTERS.ini.Write("numberOfCounters", COUNTERS.Counters.Count.ToString());
     }
 
-    //Add new counter
+    /// <summary>
+    /// Add new counter
+    /// </summary>
+    /// <param name="s">Event source</param>
+    /// <param name="e">Event arguments</param>
     private void MenuAddCounter(object s, EventArgs e)
     {
         COUNTERS.Counters.Add(new(new CounterSettings { Number = COUNTERS.Counters.Count + 1 }));
@@ -600,7 +649,11 @@ public partial class Counter
         COUNTERS.ini.Write("numberOfCounters", COUNTERS.Counters.Count.ToString());
     }
 
-    //Remove current counter
+    /// <summary>
+    /// Remove current counter
+    /// </summary>
+    /// <param name="s">Event source</param>
+    /// <param name="e">Event arguments</param>
     private void MenuRemoveCounter(object s, EventArgs e)
     {
         COUNTERS.Counters.Remove(this);
@@ -614,7 +667,11 @@ public partial class Counter
         COUNTERS.ini.DeleteSection("Counter" + Settings.Number);
     }
 
-    //Run app at startup using windows task scheduler
+    /// <summary>
+    /// Run app at startup using windows task scheduler
+    /// </summary>
+    /// <param name="MenuItem">Source menu item</param>
+    /// <param name="e">Event arguments</param>
     private void MenuRunAtStartup(object MenuItem, EventArgs e)
     {
         using TaskCollection t = new TaskService().RootFolder.GetTasks(StartupTask);
@@ -631,6 +688,9 @@ public partial class Counter
                 !(c.TrayIcon.ContextMenuStrip.Items[(MenuItem as ToolStripMenuItem).Name] as ToolStripMenuItem).Checked;
     }
 
+    /// <summary>
+    /// Create startup task in windows task scheduler
+    /// </summary>
     private void CreateStartupTask()
     {
         using TaskDefinition definition = new TaskService().NewTask();
@@ -657,7 +717,11 @@ public partial class Counter
         _ = new TaskService().RootFolder.RegisterTaskDefinition(StartupTask.ToString(), definition);
     }
 
-    //Exit click
+    /// <summary>
+    /// Exit application via menu click
+    /// </summary>
+    /// <param name="s">Event source</param>
+    /// <param name="e">Event arguments</param>
     private void MenuExit(object s, EventArgs e)
     {
         foreach (Counter c in COUNTERS.Counters)
@@ -667,7 +731,9 @@ public partial class Counter
     }
 }
 
-//Object disposal
+/// <summary>
+/// Dispose couter object
+/// </summary>
 public partial class Counter : IDisposable
 {
     bool disposed;
