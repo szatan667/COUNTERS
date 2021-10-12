@@ -43,10 +43,8 @@
     <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Win32.TaskScheduler, Version=2.9.1.0, Culture=neutral, PublicKeyToken=e25603a88b3aa7da, processorArchitecture=MSIL">
-      <HintPath>packages\TaskScheduler.2.9.1\lib\net452\Microsoft.Win32.TaskScheduler.dll</HintPath>
-      <EmbedInteropTypes>False</EmbedInteropTypes>
-      <Private>True</Private>
+    <Reference Include="Microsoft.Win32.TaskScheduler, Version=2.9.2.0, Culture=neutral, PublicKeyToken=e25603a88b3aa7da, processorArchitecture=MSIL">
+      <HintPath>packages\TaskScheduler.2.9.2\lib\net452\Microsoft.Win32.TaskScheduler.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -91,4 +89,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('packages\ILMerge.3.0.40\build\ILMerge.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\ILMerge.3.0.40\build\ILMerge.props'))" />
   </Target>
+  <PropertyGroup>
+    <PostBuildEvent>C:\Users\jakubek\source\repos\szatan667\COUNTERS\packages\ILMerge.3.0.40\tools\net452\ILMerge.exe /out:R:\COUNTERS.EXE C:\Users\jakubek\source\repos\szatan667\COUNTERS\bin\Release\COUNTERS.exe C:\Users\jakubek\source\repos\szatan667\COUNTERS\bin\Release\Microsoft.Win32.TaskScheduler.dll</PostBuildEvent>
+  </PropertyGroup>
 </Project>
